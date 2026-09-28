@@ -235,3 +235,90 @@ def test_llm_strict_mode_raises(cases_dir: Path, ctx: Context) -> None:
     extractor = LLMTextExtractor(_RaisingClient(), fallback=None)
     with pytest.raises(ConnectionError):
         run(cases_dir / "knee_05.pdf", CLAIM_DATE, Context(kb=ctx.kb, text_extractor=extractor))
+
+
+def test_llm_values_are_normalized_to_what_the_rules_expect(cases_dir: Path, ctx: Context) -> None:
+    """Exactly what claude-sonnet-5 returned for knee_05 on 2026-09-27: strings, not ints."""
+    client = CapturingClient(
+        canned={
+            "items": [
+                {
+                    "kind": "flare_flexion_estimate",
+                    "field": "remarks",
+                    "quote": "during flare-ups flexion is estimated to be limited to 30 degrees",
+                    "value": "30 degrees",
+                },
+                {
+                    "kind": "flare_extension_estimate",
+                    "field": "remarks",
+                    "quote": "extension is not additionally limited",
+                    "value": "not additionally limited",
+                },
+                {
+                    "kind": "rationale_present",
+                    "field": "opinion_rationale",
+                    "quote": "There is no evidence of an intercurrent injury.",
+                    "value": "true",
+                },
+                {
+                    "kind": "functional_loss_factor",
+                    "field": "functional_loss_desc",
+                    "quote": "Difficulty with prolonged standing, squatting, and stairs.",
+                    "value": None,
+                },
+            ]
+        }
+    )
+    state = run(
+        cases_dir / "knee_05.pdf",
+        CLAIM_DATE,
+        Context(kb=ctx.kb, text_extractor=LLMTextExtractor(client)),
+    )
+    assert state.findings is not None
+    kinds = {(i.kind, i.value) for i in state.findings.free_text.items}
+    assert ("flare_flexion_estimate", 30) in kinds
+    assert ("rationale_present", True) in kinds
+    assert not any(k == "flare_extension_estimate" for k, _ in kinds)  # no number -> dropped
+    assert not any(k == "functional_loss_factor" for k, _ in kinds)  # no factor named -> dropped
+    assert state.evaluation is not None and state.evaluation.ratings["5260"] == 20
+
+
+def test_bare_speculation_is_never_accepted_as_a_reason(cases_dir: Path, ctx: Context) -> None:
+    """What claude-sonnet-5 returned for knee_08: the speculation sentence filed as a 'reason'."""
+    client = CapturingClient(
+        canned={
+            "items": [
+                {
+                    "kind": "flare_no_estimate_reason",
+                    "field": "flare_no_estimate_reason",
+                    "quote": "Unable to say without resorting to mere speculation.",
+                    "value": "Unable to say without resorting to mere speculation.",
+                },
+                {
+                    "kind": "speculation_unexplained",
+                    "field": "flare_no_estimate_reason",
+                    "quote": "Unable to say without resorting to mere speculation.",
+                    "value": False,
+                },
+                {
+                    "kind": "rationale_present",
+                    "field": "opinion_rationale",
+                    "quote": "There is no evidence of an intercurrent injury.",
+                    "value": True,
+                },
+            ]
+        }
+    )
+    state = run(
+        cases_dir / "knee_08.pdf",
+        CLAIM_DATE,
+        Context(kb=ctx.kb, text_extractor=LLMTextExtractor(client)),
+    )
+    report = build_report(state, ctx.kb)
+    assert report.adequate is False
+    assert [g.rule_id for g in report.gaps] == ["sharp_flare_estimate"]
+    assert state.findings is not None
+    assert {(i.kind, i.value) for i in state.findings.free_text.items} == {
+        ("speculation_unexplained", True),
+        ("rationale_present", True),
+    }

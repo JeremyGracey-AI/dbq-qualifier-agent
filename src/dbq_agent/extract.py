@@ -324,7 +324,9 @@ placeholders and are not findings. Record:
 - flare_flexion_estimate / flare_extension_estimate: degrees the examiner estimates during flare-ups
 - flare_no_estimate_reason / rep_use_not_performed_reason: a stated reason (value = the reason)
 - rationale_present: true if the opinion rationale contains actual reasoning, false if conclusory
-- speculation_unexplained: true if the examiner declines to estimate/opine as speculative without saying why
+- speculation_unexplained: true if the examiner declines to estimate/opine as speculative without saying why.
+  "Cannot be determined without resorting to speculation" on its own is NOT a reason; record it
+  here, not as a *_reason item, unless the examiner also explains why (missing records, refusal, safety...)
 - functional_loss_factor: weakness, fatigability or incoordination described in prose
 Do not rate, do not cite law, do not add anything not in the text."""
 
@@ -362,16 +364,69 @@ class LLMTextExtractor:
             kind, fld, quote = it.get("kind"), it.get("field"), it.get("quote", "")
             if kind not in valid_kinds or fld not in deid.free_text:
                 continue
-            if quote and quote not in deid.free_text[fld]:
-                continue  # hallucinated quote; verify would drop it anyway
+            if not quote or quote not in deid.free_text[fld]:
+                continue  # missing or hallucinated quote; verify would drop it anyway
+            value = normalize_value(kind, it.get("value"), quote)
+            if value is None and kind not in (
+                "flare_no_estimate_reason",
+                "rep_use_not_performed_reason",
+            ):
+                continue  # e.g. "extension is not additionally limited" carries no number
+            if kind == "speculation_unexplained" and value is False:
+                continue  # a negative finding is not evidence of anything
+            if (
+                kind in ("flare_no_estimate_reason", "rep_use_not_performed_reason")
+                and isinstance(value, str)
+                and "speculat" in value.lower()
+                and not _has_cue(value)
+            ):
+                # Jones v. Shinseki: "cannot say without speculation" is not a reason unless
+                # the examiner explains why. Rules decide this, not the model.
+                kind, value = "speculation_unexplained", True
             items.append(
                 TextClaim(
                     kind=kind,
-                    value=it.get("value"),
+                    value=value,
                     span=Span(field=fld, page=_page_of(doc, fld), text=quote, deid=True),
                 )
             )
         return FreeTextFindings(items=items, extractor=self.name)
+
+
+_INT = re.compile(r"-?\d{1,3}")
+
+
+def normalize_value(kind: str, value: Any, quote: str) -> str | int | bool | None:
+    """Coerce a model-supplied value into the type the evaluator expects for `kind`.
+
+    Models return "30 degrees" where the rules need 30, "true" where they need True, and
+    prose where a factor name is expected. Anything that cannot be coerced becomes None so the
+    caller drops the item instead of carrying an unusable value into evaluation.
+    """
+    if kind in ("flare_flexion_estimate", "flare_extension_estimate"):
+        if isinstance(value, int) and not isinstance(value, bool):
+            return value
+        if isinstance(value, str) and (m := _INT.search(value)):
+            return int(m.group(0))
+        # no usable value: take the number written with a degree unit in the quote, if any
+        if m := re.search(_DEG, quote.lower()):
+            return int(m.group(1))
+        return None
+    if kind in ("rationale_present", "speculation_unexplained"):
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, str):
+            return value.strip().lower() in ("true", "yes", "1")
+        return None
+    if kind == "functional_loss_factor":
+        text = f"{value or ''} {quote}".lower()
+        for factor in ("weakness", "fatigability", "incoordination"):
+            if factor in text:
+                return factor
+        return None
+    if kind in ("flare_no_estimate_reason", "rep_use_not_performed_reason"):
+        return str(value) if value else quote
+    return value if isinstance(value, str | int | bool) else None
 
 
 def extract(

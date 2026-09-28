@@ -11,12 +11,17 @@ gaps (Correia / DeLuca / Sharp / Mitchell / opinion rationale), verifying critic
   loop, JSON/markdown report, CLI (`run | eval | synth`), eval harness, CI workflow.
 - Verified: ruff clean, pyright 0 errors, 23 tests green, `dbq-agent eval` 10/10 cases with
   citation faithfulness 31/31.
-- Not yet exercised: `--llm anthropic` against the real API (no key in the build environment);
-  the client uses forced tool use and validates every quote, but run it once before relying on it.
+- 2026-09-27 late: `--llm anthropic --strict` verified against claude-sonnet-5 on the Mac.
+  Two real-model findings fixed the same night: (1) the model returns "30 degrees" as a string,
+  so values are now normalized per kind before evaluation; (2) it filed a bare "cannot say
+  without speculation" as a *reason*, so that reclassification is now a rule (Jones), not a
+  model judgment. `dbq-agent eval` is 10/10 with both extractors, citation faithfulness 31/31.
+- Silent LLM fallback is gone: failures warn with the exception name, the report records it,
+  and `--strict` disables the fallback.
 
 ## Next step
-Run `ANTHROPIC_API_KEY=... uv run dbq-agent run cases/knee_05.pdf --llm anthropic --claim-date 2026-09-01`
-and confirm the flare estimate (30°) is extracted from the remarks with a verbatim quote.
+Pick the next DC to add (5257 instability is the obvious one; criteria text marked verify in
+the KB), or start the scanned-DBQ ingest path. Either is a fresh 45-minute chunk.
 
 ## Verify
 - `uv run ruff check . && uv run ruff format --check . && uv run pyright && uv run pytest`
