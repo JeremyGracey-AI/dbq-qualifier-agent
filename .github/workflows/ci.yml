@@ -11,6 +11,7 @@ jobs:
       - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
+      - run: sudo apt-get update && sudo apt-get install -y tesseract-ocr
       - run: uv python install
       - run: uv sync --all-extras
       - run: uv run ruff check .

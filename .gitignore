@@ -12,3 +12,6 @@ build/
 .env
 out/
 *.log
+
+# image-only renditions of the synthetic cases (~1 MB each; `dbq-agent synth --scanned`)
+cases/scanned/

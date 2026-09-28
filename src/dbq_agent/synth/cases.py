@@ -12,7 +12,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from dbq_agent.synth.knee import KneeTruth, blank_values, build_pdf
+from dbq_agent.synth.knee import KneeTruth, blank_values, build_pdf, build_scanned_pdf
 
 DEFAULT_CASES_DIR = Path(__file__).resolve().parents[3] / "cases"
 
@@ -467,16 +467,27 @@ def all_cases() -> list[dict[str, Any]]:
     return cases
 
 
-def write_cases(cases_dir: Path | None = None) -> list[Path]:
-    """Build every case PDF and cases/truth.json. Returns the PDF paths."""
+SCANNED_SUBDIR = "scanned"
+
+
+def write_cases(cases_dir: Path | None = None, scanned: bool = False) -> list[Path]:
+    """Build every case PDF and cases/truth.json. Returns the PDF paths.
+
+    With `scanned=True` also writes image-only renditions to `<cases_dir>/scanned/` (same
+    case ids, same truth), which exercise the OCR ingest path. Those are not committed: they
+    are ~1 MB each and regenerable.
+    """
     cases_dir = cases_dir or DEFAULT_CASES_DIR
     cases_dir.mkdir(parents=True, exist_ok=True)
     paths: list[Path] = []
     truth: dict[str, Any] = {}
     for case in all_cases():
         cid = str(case["case_id"])
-        pdf = build_pdf(KneeTruth(case_id=cid, values=case["values"]), cases_dir / f"{cid}.pdf")
+        kt = KneeTruth(case_id=cid, values=case["values"])
+        pdf = build_pdf(kt, cases_dir / f"{cid}.pdf")
         paths.append(pdf)
+        if scanned:
+            paths.append(build_scanned_pdf(kt, cases_dir / SCANNED_SUBDIR / f"{cid}.pdf"))
         truth[cid] = {
             "values": case["values"],
             "claim_date": case.get("claim_date"),

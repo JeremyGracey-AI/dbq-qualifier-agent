@@ -35,6 +35,13 @@ class FieldValue(BaseModel):
     page: int
     value: str
     kind: FieldKind
+    bbox: tuple[int, int, int, int] | None = Field(
+        default=None, description="x0, y0, x1, y1 in raster pixels (OCR ingest only)"
+    )
+    confidence: float | None = Field(default=None, description="OCR confidence 0-1, if any")
+
+
+SourceKind = Literal["acroform", "ocr"]
 
 
 class IngestedDoc(BaseModel):
@@ -42,6 +49,8 @@ class IngestedDoc(BaseModel):
     source_path: str
     page_count: int
     fields: dict[str, FieldValue]
+    source_kind: SourceKind = "acroform"
+    dpi: int | None = None
 
     def get(self, name: str) -> str | None:
         fv = self.fields.get(name)
@@ -352,6 +361,16 @@ class PipelineMeta(BaseModel):
     redactors: list[str] = Field(default_factory=list)
     retrieval_iterations: int = 0
     kb_version: str = ""
+    source_kind: SourceKind = "acroform"
+    dpi: int | None = Field(default=None, description="raster resolution of an OCR ingest")
+
+
+class OcrBox(BaseModel):
+    """Where an OCR-recovered value sits on the scan, so a reviewer can look at the ink."""
+
+    page: int
+    bbox: tuple[int, int, int, int] = Field(description="x0, y0, x1, y1 in pixels at `dpi`")
+    confidence: float | None = None
 
 
 class State(BaseModel):
@@ -407,6 +426,10 @@ class QualifierReport(BaseModel):
     dropped_claims: list[Claim]
     veteran: Identity | None = Field(default=None, description="re-identified; inside boundary")
     pipeline: PipelineMeta
+    ocr_boxes: dict[str, OcrBox] = Field(
+        default_factory=dict,
+        description="field name -> pixel box on the scan (OCR ingest only; empty for AcroForm)",
+    )
     disclaimer: str = (
         "Decision support only. Ratings are provisional mappings of DBQ findings to 38 CFR "
         "Part 4 criteria for a human reviewer (VSO or attorney). Not a VA rating decision."

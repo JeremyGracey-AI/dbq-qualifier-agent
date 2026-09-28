@@ -1,8 +1,11 @@
 """dbq-agent command line.
 
 dbq-agent run cases/knee_03.pdf [--claim-date 2026-09-01] [--llm heuristic|anthropic] [--json out.json]
-dbq-agent eval [--cases cases] [--llm ...]
-dbq-agent synth [--out cases]
+dbq-agent eval [--cases cases] [--scanned] [--llm ...]
+dbq-agent synth [--out cases] [--scanned]
+
+`run` takes a fillable PDF or a scan; a PDF without form fields goes through OCR (needs the
+`ocr` extra and a tesseract binary).
 """
 
 from __future__ import annotations
@@ -61,18 +64,26 @@ def main(argv: list[str] | None = None) -> int:
 
     p_eval = sub.add_parser("eval", help="score the pipeline against cases/truth.json")
     p_eval.add_argument("--cases", type=Path, default=Path("cases"))
+    p_eval.add_argument(
+        "--scanned",
+        action="store_true",
+        help="run the image-only renditions in <cases>/scanned/ (built on demand) through OCR",
+    )
     _add_common(p_eval)
 
     p_synth = sub.add_parser("synth", help="regenerate the synthetic cases")
     p_synth.add_argument("--out", type=Path, default=Path("cases"))
+    p_synth.add_argument(
+        "--scanned", action="store_true", help="also write image-only scans to <out>/scanned/"
+    )
 
     args = parser.parse_args(argv)
 
     if args.cmd == "synth":
         from dbq_agent.synth.cases import write_cases
 
-        paths = write_cases(args.out)
-        print(f"wrote {len(paths)} cases + truth.json to {args.out.resolve()}")
+        paths = write_cases(args.out, scanned=args.scanned)
+        print(f"wrote {len(paths)} PDFs + truth.json under {args.out.resolve()}")
         return 0
 
     ctx = Context(
@@ -95,10 +106,20 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.cmd == "eval":
         from dbq_agent.evaluate_cases import evaluate_cases
-        from dbq_agent.synth.cases import load_truth
+        from dbq_agent.synth.cases import SCANNED_SUBDIR, load_truth, write_cases
 
         truth = load_truth(args.cases)
-        result = evaluate_cases(args.cases, truth, args.claim_date, ctx)
+        cases_dir = args.cases
+        if args.scanned:
+            from dbq_agent.ingest_ocr import TesseractEngine
+
+            if not TesseractEngine.available():
+                sys.exit("--scanned needs the `ocr` extra (uv sync --extra ocr) and tesseract")
+            cases_dir = args.cases / SCANNED_SUBDIR
+            if not all((cases_dir / f"{cid}.pdf").exists() for cid in truth):
+                print(f"building scanned renditions under {cases_dir} ...", file=sys.stderr)
+                write_cases(args.cases, scanned=True)
+        result = evaluate_cases(cases_dir, truth, args.claim_date, ctx)
         print(result.table())
         return 0 if all(c["ok"] for c in result.per_case) else 1
 

@@ -12,7 +12,7 @@ import json
 from datetime import date
 
 from dbq_agent.kb import KnowledgeBase
-from dbq_agent.models import Claim, QualifierReport, RatingLine, Span, State
+from dbq_agent.models import Claim, OcrBox, QualifierReport, RatingLine, Span, State
 from dbq_agent.phi import reidentify
 
 
@@ -74,6 +74,11 @@ def build_report(state: State, kb: KnowledgeBase) -> QualifierReport:
         dropped_claims=[_reid_claim(c, token_map) for c in dropped],
         veteran=state.identity,
         pipeline=state.meta,
+        ocr_boxes={
+            name: OcrBox(page=f.page, bbox=f.bbox, confidence=f.confidence)
+            for name, f in state.doc.fields.items()
+            if state.doc.source_kind == "ocr" and f.bbox is not None
+        },
     )
 
 
@@ -89,11 +94,17 @@ def _cite(kb: KnowledgeBase, cid: str) -> str:
     return f"{a.cite}{flag}"
 
 
-def _evidence_lines(spans: list[Span]) -> list[str]:
+def _evidence_lines(spans: list[Span], boxes: dict[str, OcrBox] | None = None) -> list[str]:
     out: list[str] = []
     for s in spans:
         q = s.text if len(s.text) <= 90 else s.text[:87] + "..."
-        out.append(f'    - p.{s.page} `{s.field}`: "{q}"')
+        where = ""
+        box = (boxes or {}).get(s.field)
+        if box is not None:  # scanned source: point at the ink, not just the field name
+            x0, y0, x1, y1 = box.bbox
+            conf = f", ocr conf {box.confidence:.2f}" if box.confidence is not None else ""
+            where = f" [px {x0},{y0}-{x1},{y1}{conf}]"
+        out.append(f'    - p.{s.page} `{s.field}`{where}: "{q}"')
     return out
 
 
@@ -102,9 +113,15 @@ def to_markdown(report: QualifierReport, kb: KnowledgeBase, claim_date: date | N
     vet = report.veteran.name if report.veteran and report.veteran.name else "(unknown)"
     md.append(f"# DBQ qualifier report — {report.case_id}")
     md.append("")
+    source = (
+        f"scanned, OCR at {report.pipeline.dpi} dpi"
+        if report.pipeline.source_kind == "ocr"
+        else "fillable form fields"
+    )
     md.append(
         f"Veteran: {vet} · Form: {report.form_number or report.form_type} · "
-        f"Claim date: {report.claim_date.isoformat()} · KB {report.pipeline.kb_version}"
+        f"Claim date: {report.claim_date.isoformat()} · KB {report.pipeline.kb_version} · "
+        f"Source: {source}"
     )
     md.append("")
     status = "ADEQUATE" if report.adequate else "INADEQUATE — rating withheld (see gaps)"
@@ -121,7 +138,7 @@ def to_markdown(report: QualifierReport, kb: KnowledgeBase, claim_date: date | N
         md.append(f"- **DC {dc} — {line.dc_title}: {line.pct}%**")
         md.append(f"  - Basis: {line.basis}")
         md.append("  - Evidence:")
-        md.extend(_evidence_lines(line.evidence))
+        md.extend(_evidence_lines(line.evidence, report.ocr_boxes))
         md.append(
             "  - Authority: " + "; ".join(_cite(kb, c) for c in dict.fromkeys(line.citations))
         )
@@ -131,7 +148,7 @@ def to_markdown(report: QualifierReport, kb: KnowledgeBase, claim_date: date | N
         md.append("")
         for c in report.consider:
             md.append(f"- {c.statement}")
-            md.extend(_evidence_lines(c.evidence))
+            md.extend(_evidence_lines(c.evidence, report.ocr_boxes))
             md.append("  - Authority: " + "; ".join(_cite(kb, x) for x in c.citations))
     md.append("")
     md.append("## Exam adequacy gaps")
@@ -140,7 +157,7 @@ def to_markdown(report: QualifierReport, kb: KnowledgeBase, claim_date: date | N
         md.append("_None found by the modeled rules._")
     for g in report.gaps:
         md.append(f"- **[{g.severity}] {g.rule_id}** — {g.statement}")
-        md.extend(_evidence_lines(g.evidence))
+        md.extend(_evidence_lines(g.evidence, report.ocr_boxes))
         md.append("  - Authority: " + "; ".join(_cite(kb, x) for x in g.citations))
     if report.notes:
         md.append("")

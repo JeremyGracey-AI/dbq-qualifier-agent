@@ -23,6 +23,12 @@ dependencies = [
 [project.optional-dependencies]
 llm = ["anthropic>=0.40"]
 phi = ["phi-scrub>=0.1.0"]
+ocr = [
+    "numpy>=2.5.3",
+    "pillow>=12.3.0",
+    "pypdfium2>=5.13.0",
+    "pytesseract>=0.3.13",
+]
 
 [project.scripts]
 dbq-agent = "dbq_agent.cli:main"

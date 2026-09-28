@@ -22,6 +22,8 @@ class Widget:
     label: str = ""
     options: tuple[tuple[str, str], ...] = field(default_factory=tuple)  # (value, label)
     width: int = 220
+    numeric: bool = False  # OCR ingest normalises O/l/I to digits for these
+    code: bool = False  # alphanumeric code (ICD-10); OCR ingest fixes $/S-style confusions
 
 
 YN = (("Yes", "Yes"), ("No", "No"))
@@ -87,7 +89,7 @@ PAGES: list[list[Widget]] = [
         Widget("claimed_side", "radio", "Knee examined", (("Right", "Right"), ("Left", "Left"))),
         H("Section 1. Diagnosis"),
         Widget("dx_1", "text", "Diagnosis #1", width=300),
-        Widget("dx_icd_1", "text", "ICD code", width=100),
+        Widget("dx_icd_1", "text", "ICD code", width=100, code=True),
         H("Section 2. Medical history"),
         Widget("history", "textarea", "History (onset, course, treatment)"),
         H("Section 3. Flare-ups"),
@@ -107,8 +109,14 @@ PAGES: list[list[Widget]] = [
         N(
             "Normal knee ROM: flexion 0 to 140 degrees; extension 140 to 0 degrees (38 CFR 4.71, Plate II)."
         ),
-        Widget("rom_flexion_initial", "text", "Flexion (0-140), degrees", width=80),
-        Widget("rom_extension_initial", "text", "Extension (140-0), degrees short of 0", width=80),
+        Widget("rom_flexion_initial", "text", "Flexion (0-140), degrees", width=80, numeric=True),
+        Widget(
+            "rom_extension_initial",
+            "text",
+            "Extension (140-0), degrees short of 0",
+            width=80,
+            numeric=True,
+        ),
         Widget("rom_abnormal", "radio", "Is ROM abnormal or outside normal range?", YN),
         Widget(
             "rom_contributes_functional_loss",
@@ -132,8 +140,16 @@ PAGES: list[list[Widget]] = [
         ),
         Widget("crepitus", "radio", "Objective evidence of crepitus?", YN),
         Widget("opposite_joint_undamaged", "radio", "Is the opposing joint undamaged?", YN),
-        Widget("opposite_flexion", "text", "Opposing joint flexion, degrees", width=80),
-        Widget("opposite_extension", "text", "Opposing joint extension, degrees", width=80),
+        Widget(
+            "opposite_flexion", "text", "Opposing joint flexion, degrees", width=80, numeric=True
+        ),
+        Widget(
+            "opposite_extension",
+            "text",
+            "Opposing joint extension, degrees",
+            width=80,
+            numeric=True,
+        ),
         H("Section 6. Repetitive-use testing"),
         Widget(
             "rep_use_performed",
@@ -142,9 +158,19 @@ PAGES: list[list[Widget]] = [
             YN,
         ),
         Widget("rep_use_not_performed_reason", "text", "If not performed, explain", width=300),
-        Widget("rom_flexion_post_rep", "text", "Flexion after 3 repetitions, degrees", width=80),
         Widget(
-            "rom_extension_post_rep", "text", "Extension after 3 repetitions, degrees", width=80
+            "rom_flexion_post_rep",
+            "text",
+            "Flexion after 3 repetitions, degrees",
+            width=80,
+            numeric=True,
+        ),
+        Widget(
+            "rom_extension_post_rep",
+            "text",
+            "Extension after 3 repetitions, degrees",
+            width=80,
+            numeric=True,
         ),
         Widget(
             "rep_use_additional_loss",
@@ -169,10 +195,18 @@ PAGES: list[list[Widget]] = [
             (("Yes", "Yes"), ("No", "No"), ("Unable", "Unable to say without mere speculation")),
         ),
         Widget(
-            "flare_flexion_est", "text", "Estimated flexion during flare-ups, degrees", width=80
+            "flare_flexion_est",
+            "text",
+            "Estimated flexion during flare-ups, degrees",
+            width=80,
+            numeric=True,
         ),
         Widget(
-            "flare_extension_est", "text", "Estimated extension during flare-ups, degrees", width=80
+            "flare_extension_est",
+            "text",
+            "Estimated extension during flare-ups, degrees",
+            width=80,
+            numeric=True,
         ),
         Widget("flare_no_estimate_reason", "text", "If unable to estimate, explain", width=300),
         N("Contributing factors of disability (check all that apply):"),

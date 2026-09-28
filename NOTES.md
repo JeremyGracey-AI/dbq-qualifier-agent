@@ -25,13 +25,26 @@ gaps (Correia / DeLuca / Sharp / Mitchell / opinion rationale), verifying critic
   rule `instability_rx_undocumented`, version-change note, 4 new cases (knee_11–14, knee_12 with
   its own claim date). eval 14/14, 30 tests.
 
+- 2026-09-28: scanned-DBQ ingest (`ingest_ocr.py`). Sparse-mode tesseract page pass →
+  monotone DP alignment of form labels to OCR lines → per-field zone reads (text: re-OCR of
+  the strip right of the label with box borders erased; radios/checkboxes: ink fill inside the
+  mark beside the option label; text areas: lines under the label). `ingest_any()` routes by
+  presence of form fields; `synth --scanned` / `eval --scanned` build and score image-only
+  renditions. 14/14 cases identical through OCR; field recovery exact on all 14 (text areas
+  ≥ 0.9 similarity). 41 tests. Things that bit: psm 6 drops whole lines and lone digits in
+  boxes; tesseract's char whitelist silently drops characters (don't use it); a greedy
+  first-match anchor cascades after one dropped line (hence the DP); zone crops must be
+  clamped to the line's own band or the row above bleeds in as garbage.
+
 ## Next step
-Scanned-DBQ ingest path (chunk B): a second `IngestedDoc` producer for flattened PDFs —
-rasterize → OCR → recover fields by the form's question labels; provenance = page + bbox.
+Pick one: (a) real 21-0960M-9 field-name mapping once a blank fillable form is in hand;
+(b) DC 5003 / 5258 / 5259 criteria; (c) pending-claim dual-version DC 5257 evaluation (two
+ratings, not a note).
 
 ## Verify
 - `uv run ruff check . && uv run ruff format --check . && uv run pyright && uv run pytest`
 - `uv run dbq-agent eval --claim-date 2026-09-01` → every case `ok`
+- `uv run dbq-agent eval --scanned --claim-date 2026-09-01` → every case `ok` (needs tesseract; ~6 min)
 - `uv run dbq-agent run cases/knee_07.pdf --claim-date 2026-09-01` → INADEQUATE, `correia_passive`
 
 ## Blockers
@@ -40,7 +53,7 @@ rasterize → OCR → recover fields by the form's question labels; provenance =
   (currently a note, not two ratings).
 
 ## Parking lot
-- OCR path for scanned DBQs (Docling) → second `IngestedDoc` producer.
+- OCR: handwriting / stamps / fax artefacts; a second engine behind `OcrEngine` (e.g. docTR) to compare.
 - Hybrid BM25 + dense retrieval (Qdrant) once the KB covers more than a few DCs.
 - PTSD DBQ: general rating formula tiers are qualitative → LLM-judged with a critic.
 - Combined ratings tool (§ 4.25) and bilateral factor.

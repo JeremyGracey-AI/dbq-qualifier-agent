@@ -33,7 +33,8 @@ code, docs, or prompts.
 - `uv run ruff check . && uv run ruff format --check .`
 - `uv run pyright`
 - `uv run pytest`
-- `uv run dbq-agent run cases/knee_01.pdf` / `uv run dbq-agent eval`
+- `uv run dbq-agent run cases/knee_01.pdf` / `uv run dbq-agent eval` / `uv run dbq-agent eval --scanned`
+  (the OCR path needs a `tesseract` binary; its tests skip without one)
 
 All four checks must pass before you say a task is done.
 
@@ -43,7 +44,8 @@ All four checks must pass before you say a task is done.
 src/dbq_agent/
   models.py      Pydantic types shared by every step (Span, Claim, State, ...)
   kb.py          KB loader + retrieve(dc, claim_date, tags)
-  ingest.py      pypdf AcroForm read with field/page provenance
+  ingest.py      pypdf AcroForm read with field/page provenance; ingest_any() picks the path
+  ingest_ocr.py  scanned PDFs: sparse OCR → DP label alignment → per-field zone reads (pixel bbox)
   phi.py         Deidentifier (known values + patterns + optional phi-scrub), re-identify
   extract.py     structured findings (rules) + free-text extractor (heuristic or LLM)
   llm.py         LLMClient protocol, AnthropicClient, CapturingClient (tests)
@@ -52,7 +54,7 @@ src/dbq_agent/
   report.py      JSON + markdown report
   evaluate_cases.py  metrics vs cases/truth.json
   cli.py         dbq-agent run | eval | synth
-  synth/knee.py  KneeTruth -> fillable PDF
+  synth/knee.py  KneeTruth -> fillable PDF, or a degraded image-only scan (build_scanned_pdf)
 data/kb/         criteria.json, adequacy.json, authorities.json
 cases/           synthetic PDFs + truth.json
 NOTES.md         restart note — update it when you stop mid-task

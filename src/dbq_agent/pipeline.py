@@ -15,7 +15,7 @@ from datetime import date
 from pathlib import Path
 
 from dbq_agent.extract import HeuristicTextExtractor, TextExtractor, extract
-from dbq_agent.ingest import ingest_pdf
+from dbq_agent.ingest import ingest_any
 from dbq_agent.kb import KnowledgeBase
 from dbq_agent.models import Evaluation, IngestedDoc, State
 from dbq_agent.phi import Deidentifier, read_identity
@@ -38,6 +38,8 @@ def run_doc(doc: IngestedDoc, claim_date: date, ctx: Context | None = None) -> S
     ctx = ctx or Context()
     state = State(doc=doc, claim_date=claim_date)
     state.meta.kb_version = ctx.kb.version
+    state.meta.source_kind = doc.source_kind
+    state.meta.dpi = doc.dpi
 
     # PHI boundary -------------------------------------------------------------------
     state.identity = read_identity(doc)
@@ -99,4 +101,5 @@ def run_doc(doc: IngestedDoc, claim_date: date, ctx: Context | None = None) -> S
 
 
 def run(pdf_path: Path, claim_date: date, ctx: Context | None = None) -> State:
-    return run_doc(ingest_pdf(pdf_path), claim_date, ctx)
+    """Fillable or scanned PDF; the ingest path is chosen by whether the file has fields."""
+    return run_doc(ingest_any(pdf_path), claim_date, ctx)

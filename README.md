@@ -37,7 +37,7 @@ DBQ PDF ─► ingest ─► PHI gate ─► extract ─► classify ─► retr
 | --- | --- |
 | Knee DBQ structure, one joint | Other DBQs (PTSD general rating formula = LLM-judged tiers) |
 | DC 5260 / 5261 (ROM thresholds) and DC 5257 (2021 ligament + patellar predicates, and the pre-2021 text, date-selected) | DC 5003, 5258/5259, 5256 |
-| Fillable AcroForm PDFs | Scanned DBQs (OCR + layout, e.g. Docling) |
+| Fillable AcroForm PDFs and image-only scans (tesseract OCR, label-anchored field recovery, pixel provenance) | Real scanner artefacts beyond skew/blur/JPEG (stamps, handwriting, fax) |
 | Structured + lexical retrieval over a small KB | Hybrid BM25 + dense (Qdrant) once the KB grows |
 | Heuristic or Claude free-text extractor | Combined ratings (§ 4.25), bilateral factor |
 | Synthetic cases only | Real form field-name mapping |
@@ -46,11 +46,17 @@ DBQ PDF ─► ingest ─► PHI gate ─► extract ─► classify ─► retr
 
 ```bash
 uv sync --all-extras
-uv run dbq-agent eval --claim-date 2026-09-01        # scores the 10 synthetic cases
+uv run dbq-agent eval --claim-date 2026-09-01        # scores the 14 synthetic cases
 uv run dbq-agent run cases/knee_07.pdf --claim-date 2026-09-01   # an inadequate exam (Correia)
 uv run dbq-agent run cases/knee_05.pdf --claim-date 2026-09-01 --json out.json
 ANTHROPIC_API_KEY=... uv run dbq-agent run cases/knee_05.pdf --llm anthropic
+uv run dbq-agent eval --scanned --claim-date 2026-09-01   # same cases as image-only scans, via OCR
 ```
+
+`run` accepts a scan as well as a fillable form: a PDF with no form fields is rasterized and
+read by OCR (`uv sync --extra ocr` plus a `tesseract` binary — `brew install tesseract` or
+`apt install tesseract-ocr`). The report then says `Source: scanned` and every evidence line
+carries the pixel box the value was read from.
 
 `uv run ruff check . && uv run pyright && uv run pytest` must all pass before a change is done.
 
@@ -94,6 +100,31 @@ and asserts no identity value appears in any payload.
 
 `dbq-agent eval` reports tier precision/recall, adequacy accuracy, gap precision/recall, the
 § 4.7 consider-flag precision/recall, and citation faithfulness over every emitted claim.
+`dbq-agent eval --scanned` runs the same cases as image-only scans (`cases/scanned/`, built
+on demand by `dbq-agent synth --scanned`: print rendition → 200 dpi raster → ±0.4° skew, blur,
+speckle, JPEG) through the OCR path; all 14 reach the same outcome.
+
+## Scanned DBQs
+
+`src/dbq_agent/ingest_ocr.py` turns a scan into the same `IngestedDoc` the AcroForm path
+produces, in two passes:
+
+1. **Anchor.** Each page is OCR'd in sparse-text mode into words with boxes, grouped into
+   lines, and the form's question labels are aligned to those lines with a monotone
+   dynamic-programming alignment (labels come in reading order; the alignment that maximises
+   total label similarity while keeping that order is the anchoring). A dropped or garbled
+   line costs one field, not every field after it; a label with no line is looked for once
+   more in the strip between its neighbours.
+2. **Zone.** Each answer is read relative to its anchor by widget kind: a text value from a
+   re-OCR of the strip right of the label (box borders erased, upscaled — page-level OCR
+   drops a lone "60" in a bordered box); a text area from the lines under the label; radio
+   and checkbox marks from ink density inside the mark next to the option label (OCR cannot
+   read a filled circle; pixels can).
+
+Every recovered value carries page + pixel bbox + OCR confidence, and the report prints them
+next to each evidence quote. The layout assumptions (answer right of label, options on or
+below the label line, checkbox left of label) are stated in the module docstring so a real
+form's layout is a known change.
 
 ## Policy choices you may want to change
 

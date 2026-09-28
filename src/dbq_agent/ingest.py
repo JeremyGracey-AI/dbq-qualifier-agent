@@ -2,8 +2,8 @@
 
 Deterministic on purpose: AcroForm field values are read directly (no OCR, no model). Each
 field records the page its widget sits on so every downstream claim can point back to a
-page + field. A scanned-DBQ path (OCR + layout) is out of scope for this slice and would plug
-in here as a second `IngestedDoc` producer.
+page + field. `ingest_any` falls back to the OCR path (`dbq_agent.ingest_ocr`) when the PDF
+carries no form fields, i.e. it is a scan.
 """
 
 from __future__ import annotations
@@ -86,3 +86,16 @@ def ingest_pdf(path: Path, case_id: str | None = None) -> IngestedDoc:
         page_count=len(reader.pages),
         fields=fields,
     )
+
+
+def has_form_fields(path: Path) -> bool:
+    return bool(PdfReader(str(path)).get_fields())
+
+
+def ingest_any(path: Path, case_id: str | None = None, dpi: int = 200) -> IngestedDoc:
+    """AcroForm when the PDF has fields, OCR otherwise (needs the `ocr` extra + tesseract)."""
+    if has_form_fields(path):
+        return ingest_pdf(path, case_id)
+    from dbq_agent.ingest_ocr import ingest_scanned_pdf
+
+    return ingest_scanned_pdf(path, case_id, dpi=dpi)
