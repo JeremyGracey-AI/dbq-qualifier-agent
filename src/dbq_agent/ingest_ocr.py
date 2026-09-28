@@ -35,7 +35,9 @@ logic. Optional extra: `uv sync --extra ocr` plus a tesseract binary on PATH.
 
 from __future__ import annotations
 
+import os
 import re
+import tempfile
 from dataclasses import dataclass, field
 from difflib import SequenceMatcher
 from pathlib import Path
@@ -103,6 +105,12 @@ class OcrEngine(Protocol):
 @dataclass
 class TesseractEngine:
     name: str = "tesseract"
+
+    def __post_init__(self) -> None:
+        # pytesseract hands tesseract a temp file. With TMPDIR unset on macOS that lands in
+        # /tmp/..., a symlink Leptonica can fail to open from a sandboxed shell, while the
+        # real path (/private/tmp/...) always opens. Resolve the default temp dir once.
+        tempfile.tempdir = os.path.realpath(tempfile.gettempdir())
 
     @staticmethod
     def available() -> bool:
