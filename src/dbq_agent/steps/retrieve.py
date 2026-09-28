@@ -27,8 +27,18 @@ def tags_for(findings: KneeFindings, classification: Classification) -> list[str
         tags += ["opinion", "nexus", "rationale", "speculation"]
     if findings.arthritis_on_imaging:
         tags += ["5003", "arthritis", "separate-ratings", "5257"]
-    if any(v not in ("Normal", "NotTested") for v in findings.instability.values()):
-        tags += ["5257", "instability"]
+    inst = findings.instability_findings
+    if (inst is not None and inst.any_instability()) or any(
+        v not in ("Normal", "NotTested") for v in findings.instability.values()
+    ):
+        tags += [
+            "5257",
+            "instability",
+            "subluxation",
+            "patellar",
+            "effective-date",
+            "separate-ratings",
+        ]
     return sorted(set(tags))
 
 

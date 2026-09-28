@@ -22,7 +22,9 @@ DBQ PDF ─► ingest ─► PHI gate ─► extract ─► classify ─► retr
   a reasoned rationale. Its quotes must be verbatim or they are discarded.
 - The qualifiers are a corpus, not prompt text: `data/kb/criteria.json` holds criteria as rows
   with effective dates (the version in force on the claim date controls), `adequacy.json` holds
-  the exam-adequacy rules, `authorities.json` holds what can be cited.
+  the exam-adequacy rules, `authorities.json` holds what can be cited. Two row kinds:
+  `rom_threshold` (a degree cut-off, DC 5260/5261) and `predicate` (alternatives of
+  fact → allowed values, the 2021 DC 5257 text). Adding a code is adding rows.
 - The critic is the agentic part. `steps/verify.py` rejects any claim without a resolvable
   evidence span and a retrieved citation; when a citation exists in the KB but was not retrieved
   it sends the pipeline back to retrieval, at most `max_retrieval_iterations` times.
@@ -34,7 +36,7 @@ DBQ PDF ─► ingest ─► PHI gate ─► extract ─► classify ─► retr
 | In | Out (next) |
 | --- | --- |
 | Knee DBQ structure, one joint | Other DBQs (PTSD general rating formula = LLM-judged tiers) |
-| DC 5260 / 5261 | DC 5257 (instability, revised 2021), 5003, 5258/5259, 5256 |
+| DC 5260 / 5261 (ROM thresholds) and DC 5257 (2021 ligament + patellar predicates, and the pre-2021 text, date-selected) | DC 5003, 5258/5259, 5256 |
 | Fillable AcroForm PDFs | Scanned DBQs (OCR + layout, e.g. Docling) |
 | Structured + lexical retrieval over a small KB | Hybrid BM25 + dense (Qdrant) once the KB grows |
 | Heuristic or Claude free-text extractor | Combined ratings (§ 4.25), bilateral factor |
@@ -85,6 +87,10 @@ and asserts no identity value appears in any payload.
 | knee_08 | flare-ups, unexplained "speculation" | **inadequate** (Sharp / Jones), provisional 5261 10% |
 | knee_09 | no repetitive-use testing, bare opinion | **inadequate** (DeLuca), opinion gap |
 | knee_10 | 33° flexion with weakness + fatigability | 10% with § 4.7 consider flag |
+| knee_11 | unrepaired complete ACL tear, persistent instability, brace + cane | DC 5257 30% (2021 text) + 5260 10% |
+| knee_12 | claim date 2020-06-01, moderate subluxation history | DC 5257 20% under the pre-2021 text; version-change note |
+| knee_13 | patellar instability after reconstruction, brace + walker | DC 5257 30% (patellar sub-table) |
+| knee_14 | persistent instability, prescriptions left blank | **inadequate** for DC 5257 (`instability_rx_undocumented`) |
 
 `dbq-agent eval` reports tier precision/recall, adequacy accuracy, gap precision/recall, the
 § 4.7 consider-flag precision/recall, and citation faithfulness over every emitted claim.
@@ -101,7 +107,9 @@ All in `steps/evaluate.py`, each with a docstring:
 
 ## Sources
 
-- 38 C.F.R. § 4.71a (DC 5260, 5261), § 4.71 Plate II, §§ 4.7, 4.25, 4.31, 4.40, 4.45, 4.59 — eCFR
+- 38 C.F.R. § 4.71a (DC 5260, 5261, 5257), § 4.71 Plate II, §§ 4.7, 4.25, 4.31, 4.40, 4.45, 4.59 — eCFR
+- 85 FR 76453 (Nov. 30, 2020), Schedule for Rating Disabilities: Musculoskeletal System and Muscle
+  Injuries, effective Feb. 7, 2021 — source of the current DC 5257 text and its Notes
 - VAOPGCPREC 9-2004; 23-97; 9-98
 - DeLuca v. Brown, 8 Vet. App. 202 (1995); Mitchell v. Shinseki, 25 Vet. App. 32 (2011);
   Correia v. McDonald, 28 Vet. App. 158 (2016); Sharp v. Shulkin, 29 Vet. App. 26 (2017);
@@ -111,8 +119,10 @@ All in `steps/evaluate.py`, each with a docstring:
   23 Vet. App. 382 (2010); Barr v. Nicholson, 21 Vet. App. 303 (2007); Lyles v. Shulkin,
   29 Vet. App. 107 (2017)
 
-Authorities marked `"verify": true` in `authorities.json` (M21-1 section numbering, DC 5257
-post-2021 text) still need a human check before they are relied on.
+Authorities marked `"verify": true` in `authorities.json` (M21-1 section numbering) still need a
+human check before they are relied on. Known simplification: DC 5257 is rated under the version
+in effect on the claim date; for a claim pending across 2021-02-07 the report adds a note that
+VA applies the earlier text before that date and the more favorable text from it.
 
 ## License
 

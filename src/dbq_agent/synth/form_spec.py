@@ -27,6 +27,7 @@ class Widget:
 YN = (("Yes", "Yes"), ("No", "No"))
 YN_NT = (("Yes", "Yes"), ("No", "No"), ("NotTested", "Not tested"))
 YN_NA = (("Yes", "Yes"), ("No", "No"), ("NotAddressed", "Not addressed"))
+SEVERITY = (("None", "None"), ("Slight", "Slight"), ("Moderate", "Moderate"), ("Severe", "Severe"))
 STAB = (
     ("Normal", "Normal"),
     ("1plus", "1+"),
@@ -192,17 +193,63 @@ PAGES: list[list[Widget]] = [
         ),
         Widget("test_medial", "radio", "Medial instability (valgus pressure)", STAB),
         Widget("test_lateral", "radio", "Lateral instability (varus pressure)", STAB),
+        Widget("subluxation_history", "radio", "History of recurrent subluxation", SEVERITY),
+        Widget("lateral_instability_history", "radio", "History of lateral instability", SEVERITY),
+        H("Section 11b. Ligament and patellar instability (DC 5257, 2021 criteria)"),
         Widget(
-            "subluxation_history",
+            "ligament_injury",
             "radio",
-            "History of recurrent subluxation",
+            "Ligament injury (cruciate or collateral)",
             (
                 ("None", "None"),
-                ("Slight", "Slight"),
-                ("Moderate", "Moderate"),
-                ("Severe", "Severe"),
+                ("Sprain", "Sprain"),
+                ("IncompleteTear", "Incomplete tear"),
+                ("CompleteTear", "Complete tear"),
             ),
         ),
+        Widget(
+            "ligament_repair_status",
+            "radio",
+            "If a tear: repair status",
+            (
+                ("NA", "N/A"),
+                ("Repaired", "Repaired"),
+                ("Unrepaired", "Unrepaired"),
+                ("FailedRepair", "Failed repair"),
+            ),
+        ),
+        Widget(
+            "persistent_instability", "radio", "Does the injury cause persistent instability?", YN
+        ),
+        Widget(
+            "rx_bracing", "radio", "Has a medical provider prescribed bracing for ambulation?", YN
+        ),
+        Widget(
+            "rx_assistive_device",
+            "radio",
+            "Assistive device prescribed by a medical provider for ambulation",
+            (
+                ("None", "None"),
+                ("Cane", "Cane"),
+                ("Crutches", "Crutches"),
+                ("Walker", "Walker"),
+            ),
+        ),
+        Widget(
+            "patellar_instability",
+            "radio",
+            "Diagnosed patellofemoral complex condition with recurrent patellar instability?",
+            YN,
+        ),
+        Widget(
+            "patellar_surgical_repair",
+            "radio",
+            "If yes: history of surgical repair of the patellofemoral complex?",
+            YN,
+        ),
+    ],
+    # ---------------------------------------------------------------- page 5
+    [
         H("Section 18. Diagnostic testing"),
         Widget("imaging_performed", "radio", "Imaging studies performed and reviewed?", YN),
         Widget("imaging_arthritis", "radio", "Degenerative or traumatic arthritis documented?", YN),
@@ -211,7 +258,7 @@ PAGES: list[list[Widget]] = [
         H("Section 20. Remarks"),
         Widget("remarks", "textarea", "Remarks, if any"),
     ],
-    # ---------------------------------------------------------------- page 5
+    # ---------------------------------------------------------------- page 6
     [
         H("Medical opinion (if requested)"),
         Widget("opinion_requested", "radio", "Was a medical opinion requested?", YN),

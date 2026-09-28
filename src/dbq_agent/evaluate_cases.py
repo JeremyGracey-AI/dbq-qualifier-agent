@@ -85,7 +85,10 @@ def evaluate_cases(
     res = EvalResult()
     for cid, entry in sorted(truth.items()):
         exp = entry["expected"]
-        state = run(cases_dir / f"{cid}.pdf", claim_date, ctx)
+        case_date = (
+            date.fromisoformat(entry["claim_date"]) if entry.get("claim_date") else claim_date
+        )
+        state = run(cases_dir / f"{cid}.pdf", case_date, ctx)
         report = build_report(state, ctx.kb)
         got_r = {dc: line.pct for dc, line in report.provisional.items()}
         got_gaps = {g.rule_id for g in report.gaps if g.rule_id}

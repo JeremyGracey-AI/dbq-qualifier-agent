@@ -23,6 +23,7 @@ from dbq_agent.models import (
     DeidPacket,
     FreeTextFindings,
     IngestedDoc,
+    InstabilityFindings,
     KneeFindings,
     OpinionFindings,
     RomSet,
@@ -144,8 +145,45 @@ def extract_structured(doc: IngestedDoc) -> KneeFindings:
             for k in ("test_lachman", "test_posterior_drawer", "test_medial", "test_lateral")
             if (v := doc.get(k))
         },
+        instability_findings=extract_instability(doc),
         opinion=opinion,
         spans=spans,
+    )
+
+
+INSTABILITY_FIELDS = (
+    "ligament_injury",
+    "ligament_repair_status",
+    "persistent_instability",
+    "rx_bracing",
+    "rx_assistive_device",
+    "patellar_instability",
+    "patellar_surgical_repair",
+    "subluxation_history",
+    "lateral_instability_history",
+)
+
+
+def _token(doc: IngestedDoc, name: str) -> str | None:
+    v = doc.get(name)
+    return v if v else None
+
+
+def extract_instability(doc: IngestedDoc) -> InstabilityFindings | None:
+    """DC 5257 inputs, straight from the form. None when the form has none of the fields."""
+    if not any(doc.has(f) for f in INSTABILITY_FIELDS):
+        return None
+    return InstabilityFindings(
+        ligament_injury=_token(doc, "ligament_injury"),
+        ligament_repair_status=_token(doc, "ligament_repair_status"),
+        persistent_instability=_yn(doc, "persistent_instability"),
+        rx_bracing=_yn(doc, "rx_bracing"),
+        rx_assistive_device=_token(doc, "rx_assistive_device"),
+        patellar_instability=_yn(doc, "patellar_instability"),
+        patellar_surgical_repair=_yn(doc, "patellar_surgical_repair"),
+        subluxation_history=_token(doc, "subluxation_history"),
+        lateral_instability_history=_token(doc, "lateral_instability_history"),
+        spans={f: doc.span(f) for f in INSTABILITY_FIELDS if doc.get(f)},
     )
 
 

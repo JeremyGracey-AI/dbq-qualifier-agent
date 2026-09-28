@@ -108,6 +108,15 @@ def opinion_rationale(f: KneeFindings) -> list[Span] | None:
     return spans
 
 
+def instability_rx_undocumented(f: KneeFindings) -> list[Span] | None:
+    inst = f.instability_findings
+    if inst is None or not inst.persistent_instability:
+        return None
+    if inst.rx_bracing is not None and inst.rx_assistive_device:
+        return None
+    return [inst.spans[k] for k in ("persistent_instability", "ligament_injury") if k in inst.spans]
+
+
 PREDICATES: dict[str, Predicate] = {
     "correia_passive": correia_passive,
     "correia_weight_bearing": correia_weight_bearing,
@@ -116,6 +125,7 @@ PREDICATES: dict[str, Predicate] = {
     "sharp_flare_estimate": sharp_flare_estimate,
     "mitchell_pain_function": mitchell_pain_function,
     "opinion_rationale": opinion_rationale,
+    "instability_rx_undocumented": instability_rx_undocumented,
 }
 
 
@@ -160,14 +170,18 @@ def notes(findings: KneeFindings) -> list[Claim]:
                 citations=["cfr-4.71a-5003", "vaopgcprec-23-97", "vaopgcprec-9-98"],
             )
         )
-    if any(v not in ("Normal", "NotTested") for v in findings.instability.values()):
+    inst = findings.instability_findings
+    rated_5257 = inst is not None and inst.any_instability()
+    if not rated_5257 and any(
+        v not in ("Normal", "NotTested") for v in findings.instability.values()
+    ):
         out.append(
             Claim(
                 id="note-dc5257_consider",
                 kind="note",
                 statement=(
-                    "Instability findings on examination: a separate rating under DC 5257 may "
-                    "apply (criteria revised 2021; not modeled here)."
+                    "Abnormal stability test without a documented ligament, patellar or "
+                    "subluxation history: ask the examiner to complete the DC 5257 section."
                 ),
                 evidence=_spans(
                     findings, "test_lachman", "test_posterior_drawer", "test_medial", "test_lateral"

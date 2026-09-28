@@ -35,6 +35,8 @@ def select_tier(rows: list[Criterion], measured: int) -> tuple[Criterion | None,
     """Highest-percentage row whose threshold the measurement meets, else (None, 0)."""
     best: Criterion | None = None
     for c in sorted(rows, key=lambda r: r.pct, reverse=True):
+        if c.kind != "rom_threshold" or c.threshold_deg is None:
+            continue
         met = measured <= c.threshold_deg if c.op == "<=" else measured >= c.threshold_deg
         if met:
             best = c
@@ -108,7 +110,10 @@ def evaluate(findings: KneeFindings, retrieved: RetrievedContext) -> Evaluation:
         by_dc.setdefault(c.dc, []).append(c)
 
     for dc, rows in sorted(by_dc.items()):
-        measure: Measure = rows[0].measure
+        if rows[0].kind == "predicate":
+            claims.extend(_evaluate_predicate_dc(dc, rows, findings, ratings))
+            continue
+        measure: Measure = rows[0].measure or "flexion"
         eff = effective_rom(findings, measure)
         if eff is None:
             continue
@@ -151,9 +156,8 @@ def evaluate(findings: KneeFindings, retrieved: RetrievedContext) -> Evaluation:
         higher = [r for r in rows if r.pct > pct]
         if higher:
             nxt = min(higher, key=lambda r: r.pct)
-            gap_deg = (
-                (value - nxt.threshold_deg) if measure == "flexion" else (nxt.threshold_deg - value)
-            )
+            nxt_threshold = nxt.threshold_deg or 0
+            gap_deg = (value - nxt_threshold) if measure == "flexion" else (nxt_threshold - value)
             factors = _factors_beyond_pain(findings)
             if 0 < gap_deg <= NEAR_TIER_DEG and factors:
                 claims.append(
@@ -173,8 +177,9 @@ def evaluate(findings: KneeFindings, retrieved: RetrievedContext) -> Evaluation:
                 )
 
     # § 4.59 painful motion minimum
-    if findings.pain_on_motion and ratings and all(p == 0 for p in ratings.values()):
-        dc = "5260" if "5260" in ratings else sorted(ratings)[0]
+    rom_ratings = {dc: p for dc, p in ratings.items() if dc in ("5260", "5261")}
+    if findings.pain_on_motion and rom_ratings and all(p == 0 for p in rom_ratings.values()):
+        dc = "5260" if "5260" in rom_ratings else sorted(rom_ratings)[0]
         ratings[dc] = max(ratings[dc], 10)
         evidence = [
             s
@@ -196,7 +201,7 @@ def evaluate(findings: KneeFindings, retrieved: RetrievedContext) -> Evaluation:
             )
         )
 
-    if len([p for p in ratings.values() if p > 0]) >= 2:
+    if len([p for dc, p in ratings.items() if p > 0 and dc in ("5260", "5261")]) >= 2:
         claims.append(
             Claim(
                 id="note-separate-ratings",
@@ -210,4 +215,94 @@ def evaluate(findings: KneeFindings, retrieved: RetrievedContext) -> Evaluation:
             )
         )
 
+    for dc, rows in sorted(by_dc.items()):
+        superseded = [r for r in rows if r.kind == "predicate" and r.effective_to is not None]
+        if dc in ratings and superseded:
+            changed = max(r.effective_to for r in superseded if r.effective_to is not None)
+            inst = findings.instability_findings
+            claims.append(
+                Claim(
+                    id=f"note-version-{dc}",
+                    kind="note",
+                    statement=(
+                        f"DC {dc} was rated under the criteria in effect on the claim date; the "
+                        f"criteria changed on {changed.isoformat()}. For a claim pending across "
+                        f"that date VA applies the earlier text before it and the more favorable "
+                        f"text from it, so evaluate both versions."
+                    ),
+                    evidence=list(inst.spans.values())[:2]
+                    if inst
+                    else list(findings.initial.spans),
+                    citations=["fr-2020-25450", f"cfr-4.71a-{dc}"],
+                )
+            )
+
+    if "5257" in ratings and any(p > 0 for dc, p in ratings.items() if dc != "5257"):
+        inst = findings.instability_findings
+        claims.append(
+            Claim(
+                id="note-separate-instability",
+                kind="note",
+                statement=(
+                    "Instability (DC 5257) and limitation of motion of the same knee are rated "
+                    "separately when the limitation of motion is at least noncompensable or "
+                    "painful; combine under § 4.25."
+                ),
+                evidence=list(inst.spans.values())[:2] if inst else list(findings.initial.spans),
+                citations=["vaopgcprec-23-97", "vaopgcprec-9-98", "cfr-4.25"],
+            )
+        )
+
     return Evaluation(claims=claims, ratings=ratings)
+
+
+def select_predicate_tier(
+    rows: list[Criterion], facts: dict[str, str]
+) -> tuple[Criterion | None, dict[str, list[str]] | None]:
+    """Highest-percentage predicate row with an alternative every fact of which is satisfied."""
+    for c in sorted(rows, key=lambda r: r.pct, reverse=True):
+        if c.kind != "predicate" or not c.requires:
+            continue
+        for alternative in c.requires:
+            if all(facts.get(fact) in allowed for fact, allowed in alternative.items()):
+                return c, alternative
+    return None, None
+
+
+def _evaluate_predicate_dc(
+    dc: str, rows: list[Criterion], findings: KneeFindings, ratings: dict[str, int]
+) -> list[Claim]:
+    inst = findings.instability_findings
+    if inst is None or not inst.any_instability():
+        return []
+    facts = inst.facts()
+    row, alternative = select_predicate_tier(rows, facts)
+    version = rows[0].cite
+    if row is None or alternative is None:
+        # Instability is documented but no level's requirements are met as documented; the
+        # gap check reports what is missing. Nothing is rated.
+        return []
+    used_fields = list(alternative)
+    if "severity" in used_fields:
+        used_fields = [f for f in used_fields if f != "severity"] + [
+            "subluxation_history",
+            "lateral_instability_history",
+        ]
+    evidence = [inst.spans[f] for f in used_fields if f in inst.spans]
+    ratings[dc] = row.pct
+    return [
+        Claim(
+            id=f"rating-{dc}",
+            kind="rating_tier",
+            dc=dc,
+            pct=row.pct,
+            statement=(
+                f"DC {dc} ({row.subtable}): the exam documents "
+                + ", ".join(f"{k}={facts[k]}" for k in alternative)
+                + f", meeting '{row.text[:90]}…' → {row.pct}% [{version}]."
+            ),
+            evidence=evidence,
+            citations=[f"cfr-4.71a-{dc}"]
+            + (["fr-2020-25450"] if row.effective_from.year >= 2021 else []),
+        )
+    ]

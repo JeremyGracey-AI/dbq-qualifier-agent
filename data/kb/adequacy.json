@@ -1,13 +1,124 @@
 {
-  "_comment": "Exam-adequacy rules the gap-check step evaluates. `severity: blocking` means the report withholds a final rating (provisional only) until the gap is cured. Each rule cites authority ids from authorities.json. The predicate for each rule is implemented in steps/gap_check.py under the same id.",
-  "version": "2026-09-27",
-  "rules": [
-    {"id": "correia_passive", "severity": "blocking", "description": "Pain on passive range of motion was not tested and the examiner gave no reason it could not be done.", "authorities": ["cfr-4.59", "correia-2016", "barr-2007"], "tags": ["knee", "correia", "passive"]},
-    {"id": "correia_weight_bearing", "severity": "blocking", "description": "Pain with weight-bearing and/or nonweight-bearing was not documented.", "authorities": ["cfr-4.59", "correia-2016"], "tags": ["knee", "correia", "weight-bearing"]},
-    {"id": "correia_opposite_joint", "severity": "advisory", "description": "The opposite joint is undamaged but its range of motion was not measured for comparison.", "authorities": ["cfr-4.59", "correia-2016"], "tags": ["knee", "correia", "opposite-joint"]},
-    {"id": "deluca_rep_use", "severity": "blocking", "description": "Repetitive-use testing was not performed and no reason was given.", "authorities": ["cfr-4.40", "cfr-4.45", "deluca-1995"], "tags": ["knee", "deluca", "repetitive-use"]},
-    {"id": "sharp_flare_estimate", "severity": "blocking", "description": "Flare-ups were reported but the examiner neither estimated functional loss during flares (in degrees where possible) nor explained why an estimate could not be given.", "authorities": ["sharp-2017", "english-2018", "deluca-1995", "jones-2010"], "tags": ["knee", "sharp", "flare-ups"]},
-    {"id": "mitchell_pain_function", "severity": "advisory", "description": "Pain on motion was noted but the examiner did not state whether it causes functional loss.", "authorities": ["mitchell-2011", "cfr-4.40"], "tags": ["knee", "mitchell", "pain"]},
-    {"id": "opinion_rationale", "severity": "advisory", "description": "A medical opinion was given without a reasoned rationale, or declined as speculative without explaining why.", "authorities": ["nieves-rodriguez-2008", "stefl-2007", "jones-2010"], "tags": ["opinion", "nexus", "rationale"]}
-  ]
+ "_comment": "Exam-adequacy rules the gap-check step evaluates. `severity: blocking` means the report withholds a final rating (provisional only) until the gap is cured. Each rule cites authority ids from authorities.json. The predicate for each rule is implemented in steps/gap_check.py under the same id.",
+ "version": "2026-09-28",
+ "rules": [
+  {
+   "id": "correia_passive",
+   "severity": "blocking",
+   "description": "Pain on passive range of motion was not tested and the examiner gave no reason it could not be done.",
+   "authorities": [
+    "cfr-4.59",
+    "correia-2016",
+    "barr-2007"
+   ],
+   "tags": [
+    "knee",
+    "correia",
+    "passive"
+   ]
+  },
+  {
+   "id": "correia_weight_bearing",
+   "severity": "blocking",
+   "description": "Pain with weight-bearing and/or nonweight-bearing was not documented.",
+   "authorities": [
+    "cfr-4.59",
+    "correia-2016"
+   ],
+   "tags": [
+    "knee",
+    "correia",
+    "weight-bearing"
+   ]
+  },
+  {
+   "id": "correia_opposite_joint",
+   "severity": "advisory",
+   "description": "The opposite joint is undamaged but its range of motion was not measured for comparison.",
+   "authorities": [
+    "cfr-4.59",
+    "correia-2016"
+   ],
+   "tags": [
+    "knee",
+    "correia",
+    "opposite-joint"
+   ]
+  },
+  {
+   "id": "deluca_rep_use",
+   "severity": "blocking",
+   "description": "Repetitive-use testing was not performed and no reason was given.",
+   "authorities": [
+    "cfr-4.40",
+    "cfr-4.45",
+    "deluca-1995"
+   ],
+   "tags": [
+    "knee",
+    "deluca",
+    "repetitive-use"
+   ]
+  },
+  {
+   "id": "sharp_flare_estimate",
+   "severity": "blocking",
+   "description": "Flare-ups were reported but the examiner neither estimated functional loss during flares (in degrees where possible) nor explained why an estimate could not be given.",
+   "authorities": [
+    "sharp-2017",
+    "english-2018",
+    "deluca-1995",
+    "jones-2010"
+   ],
+   "tags": [
+    "knee",
+    "sharp",
+    "flare-ups"
+   ]
+  },
+  {
+   "id": "mitchell_pain_function",
+   "severity": "advisory",
+   "description": "Pain on motion was noted but the examiner did not state whether it causes functional loss.",
+   "authorities": [
+    "mitchell-2011",
+    "cfr-4.40"
+   ],
+   "tags": [
+    "knee",
+    "mitchell",
+    "pain"
+   ]
+  },
+  {
+   "id": "opinion_rationale",
+   "severity": "advisory",
+   "description": "A medical opinion was given without a reasoned rationale, or declined as speculative without explaining why.",
+   "authorities": [
+    "nieves-rodriguez-2008",
+    "stefl-2007",
+    "jones-2010"
+   ],
+   "tags": [
+    "opinion",
+    "nexus",
+    "rationale"
+   ]
+  },
+  {
+   "id": "instability_rx_undocumented",
+   "severity": "blocking",
+   "description": "Persistent instability was found but the examiner did not document whether a medical provider has prescribed bracing and/or an assistive device for ambulation, which the DC 5257 criteria turn on.",
+   "authorities": [
+    "cfr-4.71a-5257",
+    "fr-2020-25450",
+    "barr-2007"
+   ],
+   "tags": [
+    "knee",
+    "5257",
+    "instability"
+   ]
+  }
+ ]
 }

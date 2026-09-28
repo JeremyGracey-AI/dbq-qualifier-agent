@@ -34,10 +34,18 @@ def classify(doc: IngestedDoc, findings: KneeFindings, covered_dcs: set[str]) ->
     abnormal_stability = any(
         v not in ("Normal", "NotTested", "") for v in findings.instability.values()
     )
-    if abnormal_stability or (doc.get("subluxation_history") or "None") != "None":
-        not_evaluated["5257"] = (
-            "instability/subluxation findings present; DC 5257 (revised 2021) not modeled"
-        )
+    inst = findings.instability_findings
+    documented = inst is not None and inst.any_instability()
+    if documented or abnormal_stability:
+        if "5257" in covered_dcs and documented:
+            candidates.append("5257")
+        elif "5257" not in covered_dcs:
+            not_evaluated["5257"] = "instability findings present; no DC 5257 rows in the KB"
+        else:
+            not_evaluated["5257"] = (
+                "abnormal stability test without a documented ligament, patellar or "
+                "subluxation/instability history; nothing for DC 5257 to rate"
+            )
     if findings.arthritis_on_imaging:
         not_evaluated["5003"] = "arthritis on imaging; DC 5003 interaction noted but not rated"
     if findings.ankylosis:

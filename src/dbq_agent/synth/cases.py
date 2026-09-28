@@ -28,6 +28,9 @@ IDENTITIES = [
     ("Aolani P. Kahale", "04/03/1993", "900-89-0123"),
     ("Samuel T. Vance", "08/17/1979", "900-90-1234"),
     ("Chloe B. Marsh", "02/25/1988", "900-01-2345"),
+    ("Marcus D. Ellison", "06/11/1983", "900-11-2233"),
+    ("Noelani R. Fernandez", "10/05/1977", "900-22-3344"),
+    ("Evan P. Sorensen", "03/22/1991", "900-33-4455"),
 ]
 
 
@@ -84,6 +87,14 @@ def _adequate_base(idx: int, flexion: int, extension: int) -> dict[str, str]:
             "test_medial": "Normal",
             "test_lateral": "Normal",
             "subluxation_history": "None",
+            "lateral_instability_history": "None",
+            "ligament_injury": "None",
+            "ligament_repair_status": "NA",
+            "persistent_instability": "No",
+            "rx_bracing": "No",
+            "rx_assistive_device": "None",
+            "patellar_instability": "No",
+            "patellar_surgical_repair": "No",
             "imaging_performed": "Yes",
             "imaging_arthritis": "No",
             "functional_impact": (
@@ -115,10 +126,12 @@ def _case(
     notes: list[str] | None = None,
     painful_motion_minimum: bool = False,
     limiting_source: dict[str, str] | None = None,
+    claim_date: str | None = None,
 ) -> dict[str, Any]:
     return {
         "case_id": case_id,
         "values": values,
+        "claim_date": claim_date,
         "expected": {
             "adequate": adequate,
             "ratings": ratings,
@@ -341,6 +354,116 @@ def all_cases() -> list[dict[str, Any]]:
             consider_higher=["5260"],
         )
     )
+    # 11 — 2021 DC 5257: unrepaired complete ACL tear, persistent instability, brace + cane
+    v = _adequate_base(10, 110, 0)
+    v.update(
+        {
+            "dx_1": "Right knee anterior cruciate ligament tear, unrepaired, with instability",
+            "dx_icd_1": "S83.511D",
+            "test_lachman": "2plus",
+            "subluxation_history": "Moderate",
+            "lateral_instability_history": "Moderate",
+            "ligament_injury": "CompleteTear",
+            "ligament_repair_status": "Unrepaired",
+            "persistent_instability": "Yes",
+            "rx_bracing": "Yes",
+            "rx_assistive_device": "Cane",
+            "factor_instability": "Yes",
+            "remarks": "Persistent giving-way; hinged brace and a cane are prescribed for ambulation.",
+        }
+    )
+    cases.append(
+        _case(
+            "knee_11",
+            v,
+            adequate=True,
+            ratings={"5257": 30, "5260": 10, "5261": 0},
+            painful_motion_minimum=True,
+            notes=["separate-instability"],
+        )
+    )
+
+    # 12 — pre-2021 claim: moderate subluxation history rates under the old text (20%)
+    v = _adequate_base(11, 100, 0)
+    v.update(
+        {
+            "exam_date": "06/20/2020",
+            "dx_1": "Right knee medial collateral ligament sprain with recurrent subluxation",
+            "dx_icd_1": "S83.411D",
+            "test_medial": "1plus",
+            "subluxation_history": "Moderate",
+            "lateral_instability_history": "Slight",
+            "ligament_injury": "Sprain",
+            "ligament_repair_status": "NA",
+            "persistent_instability": "Yes",
+            "rx_bracing": "No",
+            "rx_assistive_device": "None",
+        }
+    )
+    cases.append(
+        _case(
+            "knee_12",
+            v,
+            adequate=True,
+            ratings={"5257": 20, "5260": 10, "5261": 0},
+            painful_motion_minimum=True,
+            notes=["separate-instability"],
+            claim_date="2020-06-01",
+        )
+    )
+
+    # 13 — patellar instability after surgical repair, brace + walker; prescriptions undocumented
+    #      for the ligament question is not an issue here (no ligament injury), so adequate
+    v = _adequate_base(12, 95, 0)
+    v.update(
+        {
+            "dx_1": "Right patellofemoral instability, status post medial patellofemoral ligament reconstruction",
+            "dx_icd_1": "M22.01",
+            "patellar_instability": "Yes",
+            "patellar_surgical_repair": "Yes",
+            "rx_bracing": "Yes",
+            "rx_assistive_device": "Walker",
+            "lateral_instability_history": "Severe",
+            "remarks": "Recurrent patellar dislocation despite reconstruction; brace and walker prescribed.",
+        }
+    )
+    cases.append(
+        _case(
+            "knee_13",
+            v,
+            adequate=True,
+            ratings={"5257": 30, "5260": 10, "5261": 0},
+            painful_motion_minimum=True,
+            notes=["separate-instability"],
+        )
+    )
+
+    # 14 — INADEQUATE for DC 5257: persistent instability found, prescriptions left blank
+    v = _adequate_base(0, 100, 0)
+    v.update(
+        {
+            "vet_name": "Kekoa M. Naeole",
+            "dx_1": "Right knee posterior cruciate ligament incomplete tear with instability",
+            "dx_icd_1": "S83.521D",
+            "test_posterior_drawer": "2plus",
+            "subluxation_history": "Slight",
+            "ligament_injury": "IncompleteTear",
+            "ligament_repair_status": "NA",
+            "persistent_instability": "Yes",
+            "rx_bracing": "",
+            "rx_assistive_device": "",
+        }
+    )
+    cases.append(
+        _case(
+            "knee_14",
+            v,
+            adequate=False,
+            ratings={"5260": 10, "5261": 0},
+            painful_motion_minimum=True,
+            gaps=["instability_rx_undocumented"],
+        )
+    )
     return cases
 
 
@@ -354,7 +477,11 @@ def write_cases(cases_dir: Path | None = None) -> list[Path]:
         cid = str(case["case_id"])
         pdf = build_pdf(KneeTruth(case_id=cid, values=case["values"]), cases_dir / f"{cid}.pdf")
         paths.append(pdf)
-        truth[cid] = {"values": case["values"], "expected": case["expected"]}
+        truth[cid] = {
+            "values": case["values"],
+            "claim_date": case.get("claim_date"),
+            "expected": case["expected"],
+        }
     (cases_dir / "truth.json").write_text(json.dumps(truth, indent=2) + "\n")
     return paths
 

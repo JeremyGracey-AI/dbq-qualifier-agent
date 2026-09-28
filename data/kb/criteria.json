@@ -1,17 +1,451 @@
 {
-  "_comment": "Rating criteria as rows. Verified against 38 CFR 4.71a (eCFR, Sep 2026) and VAOPGCPREC 9-2004 (which reprints DC 5260/5261). DC 5260 and 5261 are unchanged by the Feb 7, 2021 musculoskeletal revision. effective_from is the 1945 Schedule's effective date (1946-04-01); no later amendment to these two codes is known.",
-  "version": "2026-09-27",
-  "criteria": [
-    {"id": "5260-30", "dc": "5260", "dc_title": "Leg, limitation of flexion of", "pct": 30, "measure": "flexion", "op": "<=", "threshold_deg": 15, "text": "Flexion limited to 15°", "cite": "38 C.F.R. § 4.71a, DC 5260", "effective_from": "1946-04-01", "effective_to": null},
-    {"id": "5260-20", "dc": "5260", "dc_title": "Leg, limitation of flexion of", "pct": 20, "measure": "flexion", "op": "<=", "threshold_deg": 30, "text": "Flexion limited to 30°", "cite": "38 C.F.R. § 4.71a, DC 5260", "effective_from": "1946-04-01", "effective_to": null},
-    {"id": "5260-10", "dc": "5260", "dc_title": "Leg, limitation of flexion of", "pct": 10, "measure": "flexion", "op": "<=", "threshold_deg": 45, "text": "Flexion limited to 45°", "cite": "38 C.F.R. § 4.71a, DC 5260", "effective_from": "1946-04-01", "effective_to": null},
-    {"id": "5260-0", "dc": "5260", "dc_title": "Leg, limitation of flexion of", "pct": 0, "measure": "flexion", "op": "<=", "threshold_deg": 60, "text": "Flexion limited to 60°", "cite": "38 C.F.R. § 4.71a, DC 5260", "effective_from": "1946-04-01", "effective_to": null},
-
-    {"id": "5261-50", "dc": "5261", "dc_title": "Leg, limitation of extension of", "pct": 50, "measure": "extension", "op": ">=", "threshold_deg": 45, "text": "Extension limited to 45°", "cite": "38 C.F.R. § 4.71a, DC 5261", "effective_from": "1946-04-01", "effective_to": null},
-    {"id": "5261-40", "dc": "5261", "dc_title": "Leg, limitation of extension of", "pct": 40, "measure": "extension", "op": ">=", "threshold_deg": 30, "text": "Extension limited to 30°", "cite": "38 C.F.R. § 4.71a, DC 5261", "effective_from": "1946-04-01", "effective_to": null},
-    {"id": "5261-30", "dc": "5261", "dc_title": "Leg, limitation of extension of", "pct": 30, "measure": "extension", "op": ">=", "threshold_deg": 20, "text": "Extension limited to 20°", "cite": "38 C.F.R. § 4.71a, DC 5261", "effective_from": "1946-04-01", "effective_to": null},
-    {"id": "5261-20", "dc": "5261", "dc_title": "Leg, limitation of extension of", "pct": 20, "measure": "extension", "op": ">=", "threshold_deg": 15, "text": "Extension limited to 15°", "cite": "38 C.F.R. § 4.71a, DC 5261", "effective_from": "1946-04-01", "effective_to": null},
-    {"id": "5261-10", "dc": "5261", "dc_title": "Leg, limitation of extension of", "pct": 10, "measure": "extension", "op": ">=", "threshold_deg": 10, "text": "Extension limited to 10°", "cite": "38 C.F.R. § 4.71a, DC 5261", "effective_from": "1946-04-01", "effective_to": null},
-    {"id": "5261-0", "dc": "5261", "dc_title": "Leg, limitation of extension of", "pct": 0, "measure": "extension", "op": ">=", "threshold_deg": 5, "text": "Extension limited to 5°", "cite": "38 C.F.R. § 4.71a, DC 5261", "effective_from": "1946-04-01", "effective_to": null}
-  ]
+ "_comment": "Rating criteria as rows. DC 5260/5261 verified against 38 CFR 4.71a (eCFR, Sep 2026) and VAOPGCPREC 9-2004; unchanged by the Feb 7, 2021 musculoskeletal revision (effective_from = the 1945 Schedule's effective date, 1946-04-01). DC 5257 has two versions: the pre-2021 slight/moderate/severe text (effective_to 2021-02-07) and the 2021 text from 85 FR 76453 (Nov 30, 2020), verified against the Federal Register and two Board decisions quoting it. Predicate rows list alternatives (OR); each alternative is fact -> allowed values (AND). Simplification: the version in effect on the claim date is applied; for a claim pending across 2021-02-07, VA applies the old text before that date and the more favorable text after.",
+ "version": "2026-09-28",
+ "criteria": [
+  {
+   "id": "5260-30",
+   "dc": "5260",
+   "dc_title": "Leg, limitation of flexion of",
+   "pct": 30,
+   "measure": "flexion",
+   "op": "<=",
+   "threshold_deg": 15,
+   "text": "Flexion limited to 15°",
+   "cite": "38 C.F.R. § 4.71a, DC 5260",
+   "effective_from": "1946-04-01",
+   "effective_to": null
+  },
+  {
+   "id": "5260-20",
+   "dc": "5260",
+   "dc_title": "Leg, limitation of flexion of",
+   "pct": 20,
+   "measure": "flexion",
+   "op": "<=",
+   "threshold_deg": 30,
+   "text": "Flexion limited to 30°",
+   "cite": "38 C.F.R. § 4.71a, DC 5260",
+   "effective_from": "1946-04-01",
+   "effective_to": null
+  },
+  {
+   "id": "5260-10",
+   "dc": "5260",
+   "dc_title": "Leg, limitation of flexion of",
+   "pct": 10,
+   "measure": "flexion",
+   "op": "<=",
+   "threshold_deg": 45,
+   "text": "Flexion limited to 45°",
+   "cite": "38 C.F.R. § 4.71a, DC 5260",
+   "effective_from": "1946-04-01",
+   "effective_to": null
+  },
+  {
+   "id": "5260-0",
+   "dc": "5260",
+   "dc_title": "Leg, limitation of flexion of",
+   "pct": 0,
+   "measure": "flexion",
+   "op": "<=",
+   "threshold_deg": 60,
+   "text": "Flexion limited to 60°",
+   "cite": "38 C.F.R. § 4.71a, DC 5260",
+   "effective_from": "1946-04-01",
+   "effective_to": null
+  },
+  {
+   "id": "5261-50",
+   "dc": "5261",
+   "dc_title": "Leg, limitation of extension of",
+   "pct": 50,
+   "measure": "extension",
+   "op": ">=",
+   "threshold_deg": 45,
+   "text": "Extension limited to 45°",
+   "cite": "38 C.F.R. § 4.71a, DC 5261",
+   "effective_from": "1946-04-01",
+   "effective_to": null
+  },
+  {
+   "id": "5261-40",
+   "dc": "5261",
+   "dc_title": "Leg, limitation of extension of",
+   "pct": 40,
+   "measure": "extension",
+   "op": ">=",
+   "threshold_deg": 30,
+   "text": "Extension limited to 30°",
+   "cite": "38 C.F.R. § 4.71a, DC 5261",
+   "effective_from": "1946-04-01",
+   "effective_to": null
+  },
+  {
+   "id": "5261-30",
+   "dc": "5261",
+   "dc_title": "Leg, limitation of extension of",
+   "pct": 30,
+   "measure": "extension",
+   "op": ">=",
+   "threshold_deg": 20,
+   "text": "Extension limited to 20°",
+   "cite": "38 C.F.R. § 4.71a, DC 5261",
+   "effective_from": "1946-04-01",
+   "effective_to": null
+  },
+  {
+   "id": "5261-20",
+   "dc": "5261",
+   "dc_title": "Leg, limitation of extension of",
+   "pct": 20,
+   "measure": "extension",
+   "op": ">=",
+   "threshold_deg": 15,
+   "text": "Extension limited to 15°",
+   "cite": "38 C.F.R. § 4.71a, DC 5261",
+   "effective_from": "1946-04-01",
+   "effective_to": null
+  },
+  {
+   "id": "5261-10",
+   "dc": "5261",
+   "dc_title": "Leg, limitation of extension of",
+   "pct": 10,
+   "measure": "extension",
+   "op": ">=",
+   "threshold_deg": 10,
+   "text": "Extension limited to 10°",
+   "cite": "38 C.F.R. § 4.71a, DC 5261",
+   "effective_from": "1946-04-01",
+   "effective_to": null
+  },
+  {
+   "id": "5261-0",
+   "dc": "5261",
+   "dc_title": "Leg, limitation of extension of",
+   "pct": 0,
+   "measure": "extension",
+   "op": ">=",
+   "threshold_deg": 5,
+   "text": "Extension limited to 5°",
+   "cite": "38 C.F.R. § 4.71a, DC 5261",
+   "effective_from": "1946-04-01",
+   "effective_to": null
+  },
+  {
+   "id": "5257-old-30",
+   "dc": "5257",
+   "dc_title": "Knee, other impairment of",
+   "pct": 30,
+   "kind": "predicate",
+   "subtable": "recurrent subluxation or lateral instability",
+   "requires": [
+    {
+     "severity": [
+      "severe"
+     ]
+    }
+   ],
+   "text": "Recurrent subluxation or lateral instability: Severe",
+   "cite": "38 C.F.R. § 4.71a, DC 5257 (2020)",
+   "effective_from": "1946-04-01",
+   "effective_to": "2021-02-07"
+  },
+  {
+   "id": "5257-old-20",
+   "dc": "5257",
+   "dc_title": "Knee, other impairment of",
+   "pct": 20,
+   "kind": "predicate",
+   "subtable": "recurrent subluxation or lateral instability",
+   "requires": [
+    {
+     "severity": [
+      "moderate"
+     ]
+    }
+   ],
+   "text": "Recurrent subluxation or lateral instability: Moderate",
+   "cite": "38 C.F.R. § 4.71a, DC 5257 (2020)",
+   "effective_from": "1946-04-01",
+   "effective_to": "2021-02-07"
+  },
+  {
+   "id": "5257-old-10",
+   "dc": "5257",
+   "dc_title": "Knee, other impairment of",
+   "pct": 10,
+   "kind": "predicate",
+   "subtable": "recurrent subluxation or lateral instability",
+   "requires": [
+    {
+     "severity": [
+      "slight"
+     ]
+    }
+   ],
+   "text": "Recurrent subluxation or lateral instability: Slight",
+   "cite": "38 C.F.R. § 4.71a, DC 5257 (2020)",
+   "effective_from": "1946-04-01",
+   "effective_to": "2021-02-07"
+  },
+  {
+   "id": "5257-lig-30",
+   "dc": "5257",
+   "dc_title": "Knee, other impairment of",
+   "pct": 30,
+   "kind": "predicate",
+   "subtable": "ligament",
+   "requires": [
+    {
+     "ligament_injury": [
+      "CompleteTear"
+     ],
+     "ligament_repair_status": [
+      "Unrepaired",
+      "FailedRepair"
+     ],
+     "persistent_instability": [
+      "yes"
+     ],
+     "rx_bracing": [
+      "yes"
+     ],
+     "rx_assistive_device": [
+      "Cane",
+      "Crutches",
+      "Walker"
+     ]
+    }
+   ],
+   "text": "Unrepaired or failed repair of complete ligament tear causing persistent instability, and a medical provider prescribes both an assistive device (e.g., cane(s), crutch(es), walker) and bracing for ambulation",
+   "cite": "38 C.F.R. § 4.71a, DC 5257 (as amended, 85 FR 76453, eff. Feb. 7, 2021)",
+   "effective_from": "2021-02-07",
+   "effective_to": null
+  },
+  {
+   "id": "5257-lig-20",
+   "dc": "5257",
+   "dc_title": "Knee, other impairment of",
+   "pct": 20,
+   "kind": "predicate",
+   "subtable": "ligament",
+   "requires": [
+    {
+     "ligament_injury": [
+      "Sprain",
+      "IncompleteTear"
+     ],
+     "persistent_instability": [
+      "yes"
+     ],
+     "rx_bracing": [
+      "yes"
+     ]
+    },
+    {
+     "ligament_injury": [
+      "Sprain",
+      "IncompleteTear"
+     ],
+     "persistent_instability": [
+      "yes"
+     ],
+     "rx_assistive_device": [
+      "Cane",
+      "Crutches",
+      "Walker"
+     ]
+    },
+    {
+     "ligament_injury": [
+      "CompleteTear"
+     ],
+     "ligament_repair_status": [
+      "Repaired"
+     ],
+     "persistent_instability": [
+      "yes"
+     ],
+     "rx_bracing": [
+      "yes"
+     ]
+    },
+    {
+     "ligament_injury": [
+      "CompleteTear"
+     ],
+     "ligament_repair_status": [
+      "Repaired"
+     ],
+     "persistent_instability": [
+      "yes"
+     ],
+     "rx_assistive_device": [
+      "Cane",
+      "Crutches",
+      "Walker"
+     ]
+    },
+    {
+     "ligament_injury": [
+      "CompleteTear"
+     ],
+     "ligament_repair_status": [
+      "Unrepaired",
+      "FailedRepair"
+     ],
+     "persistent_instability": [
+      "yes"
+     ],
+     "rx_bracing": [
+      "yes"
+     ]
+    },
+    {
+     "ligament_injury": [
+      "CompleteTear"
+     ],
+     "ligament_repair_status": [
+      "Unrepaired",
+      "FailedRepair"
+     ],
+     "persistent_instability": [
+      "yes"
+     ],
+     "rx_assistive_device": [
+      "Cane",
+      "Crutches",
+      "Walker"
+     ]
+    }
+   ],
+   "text": "One of the following: (a) Sprain, incomplete ligament tear, or repaired complete ligament tear causing persistent instability, and a medical provider prescribes a brace and/or assistive device (e.g., cane(s), crutch(es), walker) for ambulation. (b) Unrepaired or failed repair of complete ligament tear causing persistent instability, and a medical provider prescribes either an assistive device (e.g., cane(s), crutch(es), walker) or bracing for ambulation",
+   "cite": "38 C.F.R. § 4.71a, DC 5257 (as amended, 85 FR 76453, eff. Feb. 7, 2021)",
+   "effective_from": "2021-02-07",
+   "effective_to": null
+  },
+  {
+   "id": "5257-lig-10",
+   "dc": "5257",
+   "dc_title": "Knee, other impairment of",
+   "pct": 10,
+   "kind": "predicate",
+   "subtable": "ligament",
+   "requires": [
+    {
+     "ligament_injury": [
+      "Sprain",
+      "IncompleteTear",
+      "CompleteTear"
+     ],
+     "persistent_instability": [
+      "yes"
+     ],
+     "rx_bracing": [
+      "no"
+     ],
+     "rx_assistive_device": [
+      "None"
+     ]
+    }
+   ],
+   "text": "Sprain, incomplete ligament tear, or complete ligament tear (repaired, unrepaired, or failed repair) causing persistent instability, without a prescription from a medical provider for an assistive device (e.g., cane(s), crutch(es), walker) or bracing for ambulation",
+   "cite": "38 C.F.R. § 4.71a, DC 5257 (as amended, 85 FR 76453, eff. Feb. 7, 2021)",
+   "effective_from": "2021-02-07",
+   "effective_to": null
+  },
+  {
+   "id": "5257-pat-30",
+   "dc": "5257",
+   "dc_title": "Knee, other impairment of",
+   "pct": 30,
+   "kind": "predicate",
+   "subtable": "patellar",
+   "requires": [
+    {
+     "patellar_instability": [
+      "yes"
+     ],
+     "patellar_surgical_repair": [
+      "yes"
+     ],
+     "rx_bracing": [
+      "yes"
+     ],
+     "rx_assistive_device": [
+      "Cane",
+      "Walker"
+     ]
+    }
+   ],
+   "text": "A diagnosed condition involving the patellofemoral complex with recurrent instability after surgical repair that requires a prescription by a medical provider for a brace and either a cane or a walker",
+   "cite": "38 C.F.R. § 4.71a, DC 5257 (as amended, 85 FR 76453, eff. Feb. 7, 2021)",
+   "effective_from": "2021-02-07",
+   "effective_to": null
+  },
+  {
+   "id": "5257-pat-20",
+   "dc": "5257",
+   "dc_title": "Knee, other impairment of",
+   "pct": 20,
+   "kind": "predicate",
+   "subtable": "patellar",
+   "requires": [
+    {
+     "patellar_instability": [
+      "yes"
+     ],
+     "patellar_surgical_repair": [
+      "yes"
+     ],
+     "rx_bracing": [
+      "yes"
+     ]
+    },
+    {
+     "patellar_instability": [
+      "yes"
+     ],
+     "patellar_surgical_repair": [
+      "yes"
+     ],
+     "rx_assistive_device": [
+      "Cane",
+      "Walker"
+     ]
+    }
+   ],
+   "text": "A diagnosed condition involving the patellofemoral complex with recurrent instability after surgical repair that requires a prescription by a medical provider for one of the following: A brace, cane, or walker",
+   "cite": "38 C.F.R. § 4.71a, DC 5257 (as amended, 85 FR 76453, eff. Feb. 7, 2021)",
+   "effective_from": "2021-02-07",
+   "effective_to": null
+  },
+  {
+   "id": "5257-pat-10",
+   "dc": "5257",
+   "dc_title": "Knee, other impairment of",
+   "pct": 10,
+   "kind": "predicate",
+   "subtable": "patellar",
+   "requires": [
+    {
+     "patellar_instability": [
+      "yes"
+     ],
+     "rx_bracing": [
+      "no"
+     ],
+     "rx_assistive_device": [
+      "None",
+      "Crutches"
+     ]
+    }
+   ],
+   "text": "A diagnosed condition involving the patellofemoral complex with recurrent instability (with or without history of surgical repair) that does not require a prescription from a medical provider for a brace, cane, or walker",
+   "cite": "38 C.F.R. § 4.71a, DC 5257 (as amended, 85 FR 76453, eff. Feb. 7, 2021)",
+   "effective_from": "2021-02-07",
+   "effective_to": null
+  }
+ ]
 }

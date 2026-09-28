@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -12,6 +13,7 @@ from dbq_agent.models import Claim, Span
 from dbq_agent.pipeline import Context, run, run_doc
 from dbq_agent.report import build_report, to_json, to_markdown
 from dbq_agent.steps.verify import verify_claims
+from dbq_agent.synth.form_spec import PAGE_OF
 from tests.conftest import CLAIM_DATE
 
 
@@ -20,7 +22,10 @@ def test_golden_outcomes_for_every_case(
 ) -> None:
     for cid, entry in truth.items():
         exp = entry["expected"]
-        state = run(cases_dir / f"{cid}.pdf", CLAIM_DATE, ctx)
+        case_date = (
+            date.fromisoformat(entry["claim_date"]) if entry.get("claim_date") else CLAIM_DATE
+        )
+        state = run(cases_dir / f"{cid}.pdf", case_date, ctx)
         report = build_report(state, ctx.kb)
         assert report.adequate is exp["adequate"], cid
         assert {dc: line.pct for dc, line in report.provisional.items()} == exp["ratings"], cid
@@ -82,7 +87,7 @@ def test_verifier_drops_ungrounded_and_uncited_claims(cases_dir: Path, ctx: Cont
         id="x-span",
         kind="note",
         statement="quote not in doc",
-        evidence=[Span(field="remarks", page=4, text="this text does not appear")],
+        evidence=[Span(field="remarks", page=PAGE_OF["remarks"], text="this text does not appear")],
         citations=["cfr-4.59"],
     )
     bad_page = Claim(

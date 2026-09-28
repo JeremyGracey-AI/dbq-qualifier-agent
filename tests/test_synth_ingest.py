@@ -2,14 +2,14 @@ from pathlib import Path
 from typing import Any
 
 from dbq_agent.ingest import ingest_pdf
-from dbq_agent.synth.form_spec import ALL_WIDGETS, PAGE_OF
+from dbq_agent.synth.form_spec import ALL_WIDGETS, PAGE_OF, PAGES
 
 
 def test_every_case_round_trips_through_ingest(cases_dir: Path, truth: dict[str, Any]) -> None:
     for cid, entry in truth.items():
         doc = ingest_pdf(cases_dir / f"{cid}.pdf")
         assert doc.case_id == cid
-        assert doc.page_count == 5
+        assert doc.page_count == len(PAGES)
         for name, expected in entry["values"].items():
             assert doc.has(name), f"{cid}: field {name} missing"
             assert doc.get(name) == expected, f"{cid}: {name}"

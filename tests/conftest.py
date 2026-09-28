@@ -23,7 +23,11 @@ def cases_dir(tmp_path_factory: pytest.TempPathFactory) -> Path:
     for case in all_cases():
         cid = str(case["case_id"])
         build_pdf(KneeTruth(case_id=cid, values=case["values"]), out / f"{cid}.pdf")
-        truth[cid] = {"values": case["values"], "expected": case["expected"]}
+        truth[cid] = {
+            "values": case["values"],
+            "claim_date": case.get("claim_date"),
+            "expected": case["expected"],
+        }
     (out / "truth.json").write_text(json.dumps(truth))
     return out
 

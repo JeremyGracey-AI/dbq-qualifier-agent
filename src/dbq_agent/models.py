@@ -9,7 +9,7 @@ from __future__ import annotations
 from datetime import date
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 # --------------------------------------------------------------------------------------
 # Provenance
@@ -90,23 +90,47 @@ Measure = Literal["flexion", "extension"]
 Op = Literal["<=", ">="]
 
 
+CriterionKind = Literal["rom_threshold", "predicate"]
+
+
 class Criterion(BaseModel):
+    """One rating level of one diagnostic code, in one version of the schedule.
+
+    - `rom_threshold`: a degree threshold on a measure (DC 5260/5261 style).
+    - `predicate`: a list of alternatives (OR); each alternative maps an instability finding
+      to the values that satisfy it (AND). Used for the 2021 DC 5257 text, which keys on tear
+      status, persistent instability and prescriptions rather than degrees.
+    """
+
     id: str
     dc: str
     dc_title: str
     pct: int
-    measure: Measure
-    op: Op
-    threshold_deg: int
+    kind: CriterionKind = "rom_threshold"
+    measure: Measure | None = None
+    op: Op | None = None
+    threshold_deg: int | None = None
+    requires: list[dict[str, list[str]]] | None = None
+    subtable: str | None = Field(default=None, description="e.g. 'ligament' or 'patellar'")
     text: str = Field(description="criterion text as printed in the schedule")
     cite: str
     effective_from: date
     effective_to: date | None = None
 
+    @model_validator(mode="after")
+    def _shape(self) -> Criterion:
+        if self.kind == "rom_threshold" and (
+            self.measure is None or self.op is None or self.threshold_deg is None
+        ):
+            raise ValueError(f"{self.id}: rom_threshold needs measure, op and threshold_deg")
+        if self.kind == "predicate" and not self.requires:
+            raise ValueError(f"{self.id}: predicate needs at least one alternative in requires")
+        return self
+
 
 class Authority(BaseModel):
     id: str
-    kind: Literal["cfr", "case", "gc_opinion", "manual"]
+    kind: Literal["cfr", "rule", "case", "gc_opinion", "manual"]
     cite: str
     title: str
     summary: str
@@ -183,6 +207,66 @@ class FreeTextFindings(BaseModel):
     extractor: str = "none"
 
 
+class InstabilityFindings(BaseModel):
+    """What the 2021 DC 5257 criteria turn on, as the examiner documented it.
+
+    Values are the form's radio tokens; `facts()` renders them as the strings the KB
+    predicates compare against. `None` means the examiner left the question blank.
+    """
+
+    ligament_injury: str | None = None  # None | Sprain | IncompleteTear | CompleteTear
+    ligament_repair_status: str | None = None  # NA | Repaired | Unrepaired | FailedRepair
+    persistent_instability: bool | None = None
+    rx_bracing: bool | None = None
+    rx_assistive_device: str | None = None  # None | Cane | Crutches | Walker
+    patellar_instability: bool | None = None
+    patellar_surgical_repair: bool | None = None
+    subluxation_history: str | None = None  # None | Slight | Moderate | Severe
+    lateral_instability_history: str | None = None  # None | Slight | Moderate | Severe
+    spans: dict[str, Span] = Field(default_factory=dict)
+
+    def any_instability(self) -> bool:
+        return bool(
+            (self.ligament_injury and self.ligament_injury != "None")
+            or self.patellar_instability
+            or (self.subluxation_history and self.subluxation_history != "None")
+            or (self.lateral_instability_history and self.lateral_instability_history != "None")
+        )
+
+    def severity(self) -> str | None:
+        """Pre-2021 characterisation: the worse of the two history fields."""
+        order = ["None", "Slight", "Moderate", "Severe"]
+        vals = [
+            v for v in (self.subluxation_history, self.lateral_instability_history) if v in order
+        ]
+        if not vals:
+            return None
+        worst = max(vals, key=order.index)
+        return None if worst == "None" else worst.lower()
+
+    def facts(self) -> dict[str, str]:
+        """Flat string facts for predicate criteria. Blank answers are simply absent."""
+        out: dict[str, str] = {}
+        if self.ligament_injury:
+            out["ligament_injury"] = self.ligament_injury
+        if self.ligament_repair_status:
+            out["ligament_repair_status"] = self.ligament_repair_status
+        if self.persistent_instability is not None:
+            out["persistent_instability"] = "yes" if self.persistent_instability else "no"
+        if self.rx_bracing is not None:
+            out["rx_bracing"] = "yes" if self.rx_bracing else "no"
+        if self.rx_assistive_device:
+            out["rx_assistive_device"] = self.rx_assistive_device
+        if self.patellar_instability is not None:
+            out["patellar_instability"] = "yes" if self.patellar_instability else "no"
+        if self.patellar_surgical_repair is not None:
+            out["patellar_surgical_repair"] = "yes" if self.patellar_surgical_repair else "no"
+        sev = self.severity()
+        if sev:
+            out["severity"] = sev
+        return out
+
+
 class KneeFindings(BaseModel):
     side: Literal["right", "left"] | None = None
     diagnosis: str | None = None
@@ -206,6 +290,7 @@ class KneeFindings(BaseModel):
     ankylosis: bool | None = None
     arthritis_on_imaging: bool | None = None
     instability: dict[str, str] = Field(default_factory=dict)
+    instability_findings: InstabilityFindings | None = None
     opinion: OpinionFindings | None = None
     free_text: FreeTextFindings = Field(default_factory=FreeTextFindings)
     spans: dict[str, Span] = Field(default_factory=dict, description="field -> span for booleans")

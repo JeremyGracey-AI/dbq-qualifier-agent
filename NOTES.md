@@ -19,9 +19,15 @@ gaps (Correia / DeLuca / Sharp / Mitchell / opinion rationale), verifying critic
 - Silent LLM fallback is gone: failures warn with the exception name, the report records it,
   and `--strict` disables the fallback.
 
+- 2026-09-28: DC 5257 added. Criteria as `predicate` rows (2021 ligament + patellar sub-tables
+  from 85 FR 76453, verified verbatim; pre-2021 slight/moderate/severe rows with effective_to),
+  eight new form fields (Section 11b), `InstabilityFindings`, `select_predicate_tier`, adequacy
+  rule `instability_rx_undocumented`, version-change note, 4 new cases (knee_11–14, knee_12 with
+  its own claim date). eval 14/14, 30 tests.
+
 ## Next step
-Pick the next DC to add (5257 instability is the obvious one; criteria text marked verify in
-the KB), or start the scanned-DBQ ingest path. Either is a fresh 45-minute chunk.
+Scanned-DBQ ingest path (chunk B): a second `IngestedDoc` producer for flattened PDFs —
+rasterize → OCR → recover fields by the form's question labels; provenance = page + bbox.
 
 ## Verify
 - `uv run ruff check . && uv run ruff format --check . && uv run pyright && uv run pytest`
@@ -29,8 +35,9 @@ the KB), or start the scanned-DBQ ingest path. Either is a fresh 45-minute chunk
 - `uv run dbq-agent run cases/knee_07.pdf --claim-date 2026-09-01` → INADEQUATE, `correia_passive`
 
 ## Blockers
-- None. Open decisions: DC 5257 post-2021 criteria text (KB row marked verify), M21-1 section
-  numbering (verify), real 21-0960M-9 field-name mapping when a blank fillable form is available.
+- None. Open decisions: M21-1 section numbering (verify), real 21-0960M-9 field-name mapping
+  when a blank fillable form is available, DC 5257 pending-claim dual-version evaluation
+  (currently a note, not two ratings).
 
 ## Parking lot
 - OCR path for scanned DBQs (Docling) → second `IngestedDoc` producer.
