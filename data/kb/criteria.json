@@ -1,0 +1,17 @@
+{
+  "_comment": "Rating criteria as rows. Verified against 38 CFR 4.71a (eCFR, Sep 2026) and VAOPGCPREC 9-2004 (which reprints DC 5260/5261). DC 5260 and 5261 are unchanged by the Feb 7, 2021 musculoskeletal revision. effective_from is the 1945 Schedule's effective date (1946-04-01); no later amendment to these two codes is known.",
+  "version": "2026-09-27",
+  "criteria": [
+    {"id": "5260-30", "dc": "5260", "dc_title": "Leg, limitation of flexion of", "pct": 30, "measure": "flexion", "op": "<=", "threshold_deg": 15, "text": "Flexion limited to 15°", "cite": "38 C.F.R. § 4.71a, DC 5260", "effective_from": "1946-04-01", "effective_to": null},
+    {"id": "5260-20", "dc": "5260", "dc_title": "Leg, limitation of flexion of", "pct": 20, "measure": "flexion", "op": "<=", "threshold_deg": 30, "text": "Flexion limited to 30°", "cite": "38 C.F.R. § 4.71a, DC 5260", "effective_from": "1946-04-01", "effective_to": null},
+    {"id": "5260-10", "dc": "5260", "dc_title": "Leg, limitation of flexion of", "pct": 10, "measure": "flexion", "op": "<=", "threshold_deg": 45, "text": "Flexion limited to 45°", "cite": "38 C.F.R. § 4.71a, DC 5260", "effective_from": "1946-04-01", "effective_to": null},
+    {"id": "5260-0", "dc": "5260", "dc_title": "Leg, limitation of flexion of", "pct": 0, "measure": "flexion", "op": "<=", "threshold_deg": 60, "text": "Flexion limited to 60°", "cite": "38 C.F.R. § 4.71a, DC 5260", "effective_from": "1946-04-01", "effective_to": null},
+
+    {"id": "5261-50", "dc": "5261", "dc_title": "Leg, limitation of extension of", "pct": 50, "measure": "extension", "op": ">=", "threshold_deg": 45, "text": "Extension limited to 45°", "cite": "38 C.F.R. § 4.71a, DC 5261", "effective_from": "1946-04-01", "effective_to": null},
+    {"id": "5261-40", "dc": "5261", "dc_title": "Leg, limitation of extension of", "pct": 40, "measure": "extension", "op": ">=", "threshold_deg": 30, "text": "Extension limited to 30°", "cite": "38 C.F.R. § 4.71a, DC 5261", "effective_from": "1946-04-01", "effective_to": null},
+    {"id": "5261-30", "dc": "5261", "dc_title": "Leg, limitation of extension of", "pct": 30, "measure": "extension", "op": ">=", "threshold_deg": 20, "text": "Extension limited to 20°", "cite": "38 C.F.R. § 4.71a, DC 5261", "effective_from": "1946-04-01", "effective_to": null},
+    {"id": "5261-20", "dc": "5261", "dc_title": "Leg, limitation of extension of", "pct": 20, "measure": "extension", "op": ">=", "threshold_deg": 15, "text": "Extension limited to 15°", "cite": "38 C.F.R. § 4.71a, DC 5261", "effective_from": "1946-04-01", "effective_to": null},
+    {"id": "5261-10", "dc": "5261", "dc_title": "Leg, limitation of extension of", "pct": 10, "measure": "extension", "op": ">=", "threshold_deg": 10, "text": "Extension limited to 10°", "cite": "38 C.F.R. § 4.71a, DC 5261", "effective_from": "1946-04-01", "effective_to": null},
+    {"id": "5261-0", "dc": "5261", "dc_title": "Leg, limitation of extension of", "pct": 0, "measure": "extension", "op": ">=", "threshold_deg": 5, "text": "Extension limited to 5°", "cite": "38 C.F.R. § 4.71a, DC 5261", "effective_from": "1946-04-01", "effective_to": null}
+  ]
+}

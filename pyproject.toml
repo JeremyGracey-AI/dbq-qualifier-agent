@@ -1,0 +1,64 @@
+[project]
+name = "dbq-qualifier-agent"
+version = "0.1.0"
+description = "Agentic RAG slice that parses a knee DBQ (VA Form 21-0960M-9 structure) and maps findings to 38 CFR Part 4 qualifiers with span-level provenance, adequacy gap checks, and a verifying critic. Decision support for VSOs and attorneys, never an automated rating."
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.12"
+authors = [{ name = "Jeremy Gracey", email = "jeremy.a.gracey@gmail.com" }]
+keywords = ["veterans", "dbq", "38-cfr", "rag", "agent", "provenance"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: Apache Software License",
+  "Programming Language :: Python :: 3",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+  "pydantic>=2.9",
+  "pypdf>=5.0",
+  "reportlab>=4.2",
+]
+
+[project.optional-dependencies]
+llm = ["anthropic>=0.40"]
+phi = ["phi-scrub>=0.1.0"]
+
+[project.scripts]
+dbq-agent = "dbq_agent.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/JeremyGracey-AI/dbq-qualifier-agent"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/dbq_agent"]
+
+[dependency-groups]
+dev = [
+  "pytest>=8.3",
+  "ruff>=0.6",
+  "pyright>=1.1.380",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+ignore = ["E501"]
+
+[tool.pyright]
+include = ["src", "tests"]
+pythonVersion = "3.12"
+typeCheckingMode = "standard"
+reportMissingModuleSource = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
