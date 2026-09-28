@@ -14,6 +14,7 @@ Structured values always win over free-text values for the same fact.
 from __future__ import annotations
 
 import re
+import warnings
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
@@ -343,12 +344,18 @@ class LLMTextExtractor:
         )
         try:
             raw = self.client.extract_json(_LLM_SYSTEM, user, _LLM_SCHEMA)
-        except Exception:  # network/model failure -> stay offline
-            if self.fallback is not None:
-                out = self.fallback.extract(deid, doc)
-                out.extractor = f"{self.name}->fallback:{self.fallback.name}"
-                return out
-            raise
+        except Exception as exc:  # network/model failure -> stay offline, but say so
+            if self.fallback is None:
+                raise
+            reason = type(exc).__name__
+            warnings.warn(
+                f"{self.name} failed ({reason}: {exc}); falling back to {self.fallback.name}",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+            out = self.fallback.extract(deid, doc)
+            out.extractor = f"{self.name}->fallback:{self.fallback.name} ({reason})"
+            return out
         items: list[TextClaim] = []
         valid_kinds = set(TextClaimKind.__args__)  # type: ignore[attr-defined]
         for it in raw.get("items", []) or []:

@@ -18,13 +18,14 @@ from dbq_agent.pipeline import Context, run
 from dbq_agent.report import build_report, to_json, to_markdown
 
 
-def _extractor(name: str) -> TextExtractor:
+def _extractor(name: str, strict: bool = False) -> TextExtractor:
     if name == "heuristic":
         return HeuristicTextExtractor()
     if name == "anthropic":
         if not AnthropicClient.available():
             sys.exit("ANTHROPIC_API_KEY is not set; use --llm heuristic or export the key")
-        return LLMTextExtractor(AnthropicClient(), fallback=HeuristicTextExtractor())
+        fallback = None if strict else HeuristicTextExtractor()
+        return LLMTextExtractor(AnthropicClient(), fallback=fallback)
     sys.exit(f"unknown --llm {name!r}")
 
 
@@ -39,6 +40,11 @@ def _add_common(p: argparse.ArgumentParser) -> None:
         "--llm", choices=["heuristic", "anthropic"], default="heuristic", help="free-text extractor"
     )
     p.add_argument("--max-iter", type=int, default=2, help="bounded re-retrieval iterations")
+    p.add_argument(
+        "--strict",
+        action="store_true",
+        help="with --llm anthropic: fail instead of falling back to the heuristic extractor",
+    )
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -69,7 +75,10 @@ def main(argv: list[str] | None = None) -> int:
         print(f"wrote {len(paths)} cases + truth.json to {args.out.resolve()}")
         return 0
 
-    ctx = Context(text_extractor=_extractor(args.llm), max_retrieval_iterations=args.max_iter)
+    ctx = Context(
+        text_extractor=_extractor(args.llm, strict=args.strict),
+        max_retrieval_iterations=args.max_iter,
+    )
 
     if args.cmd == "run":
         state = run(args.pdf, args.claim_date, ctx)

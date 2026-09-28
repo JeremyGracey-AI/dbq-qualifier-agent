@@ -210,3 +210,28 @@ def test_claim_date_before_criteria_yields_no_rating(
 
     state = run(cases_dir / "knee_01.pdf", date.fromisoformat(bad_date), ctx)
     assert state.evaluation is not None and state.evaluation.ratings == {}
+
+
+class _RaisingClient:
+    name = "raising"
+
+    def extract_json(self, system: str, user: str, schema: dict) -> dict:  # type: ignore[type-arg]
+        raise ConnectionError("simulated 401")
+
+
+def test_llm_fallback_is_loud_and_named(cases_dir: Path, ctx: Context) -> None:
+    from dbq_agent.extract import HeuristicTextExtractor
+
+    extractor = LLMTextExtractor(_RaisingClient(), fallback=HeuristicTextExtractor())
+    with pytest.warns(RuntimeWarning, match="ConnectionError"):
+        state = run(
+            cases_dir / "knee_05.pdf", CLAIM_DATE, Context(kb=ctx.kb, text_extractor=extractor)
+        )
+    assert state.meta.text_extractor == "llm:raising->fallback:heuristic (ConnectionError)"
+    assert state.evaluation is not None and state.evaluation.ratings["5260"] == 20
+
+
+def test_llm_strict_mode_raises(cases_dir: Path, ctx: Context) -> None:
+    extractor = LLMTextExtractor(_RaisingClient(), fallback=None)
+    with pytest.raises(ConnectionError):
+        run(cases_dir / "knee_05.pdf", CLAIM_DATE, Context(kb=ctx.kb, text_extractor=extractor))
